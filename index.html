@@ -905,23 +905,25 @@
       eightRotation: !!draft.eightRotation,
       status: "active",
       teams: [],
-      matches: [],
-      roundCursor: {} // for 6/8 fixed cycle index
+      matches: []
     };
     draft.pairing.pairs.forEach(function(pr){
       session.teams.push({id:uid(), playerIds:pr});
     });
 
     if(mode===4){
-      var m = createMatch(session, session.teams[0].id, session.teams[1].id, null);
-      session.matches.push(m);
+      session.matches.push(createMatch(session, session.teams[0].id, session.teams[1].id, null));
     } else if(mode===6){
-      session.cycle = 0; // index into schedule
+      session.teamScores = {};
+      session.teams.forEach(function(t){ session.teamScores[t.id] = 0; });
+      session.matches.push(createMatch(session, null, null, null));
     } else if(mode===8){
       if(draft.eightRotation){
-        session.cycle = 0;
+        session.teamScores = {};
+        session.teams.forEach(function(t){ session.teamScores[t.id] = 0; });
+        session.matches.push(createMatch(session, null, null, null, 0));
+        session.matches.push(createMatch(session, null, null, null, 1));
       } else {
-        // fixed: create one ongoing match per table
         var t = draft.tableAssign;
         var table1 = [], table2 = [];
         session.teams.forEach(function(team, idx){
@@ -934,15 +936,7 @@
 
     state.sessions.push(session);
     save();
-
-    if(mode===4){
-      go("match", {sessionId:session.id, matchId:session.matches[0].id});
-    } else if(mode===6){
-      startNextSixMatch(session);
-    } else if(mode===8){
-      if(draft.eightRotation){ startNextEightRotationRound(session); }
-      else { go("match", {sessionId:session.id, matchId:session.matches[0].id}); }
-    }
+    go("match", {sessionId:session.id, matchId:session.matches[0].id});
   }
 
   /* ----- 5-player sit-out order screen ----- */
@@ -1016,15 +1010,6 @@
       return html;
     }
 
-    if(session.mode===8 && session.eightRotation){
-      var pairing = roundRobin4(session.teams.map(function(t){return t.id;}))[session.cycle % 3];
-      html += '<div class="card section"><p class="faint" style="margin-bottom:8px;">Runde '+(session.cycle+1)+' von 3</p>';
-      html += '<h3>Tisch 1: '+teamNames(session, pairing[0][0])+' vs '+teamNames(session, pairing[0][1])+'</h3>' +
-              '<h3 style="margin-top:10px;">Tisch 2: '+teamNames(session, pairing[1][0])+' vs '+teamNames(session, pairing[1][1])+'</h3></div>';
-      html += '<div class="section"><button class="btn btn-primary btn-block" data-action="startEightRotationMatches">Beide Partien starten</button></div>';
-      return html;
-    }
-
     return '<div class="center-note muted">Nichts vorzubereiten.</div>';
   }
 
@@ -1092,8 +1077,44 @@
 
   function matchPairing(session, match, idx){
     if(session.mode===5){ return computeFiveRoundPairing(session, match, idx); }
+    if(session.mode===6){ return computeSixRoundPairing(session, match, idx); }
+    if(session.mode===8 && session.eightRotation){ return computeEightRoundPairing(session, match.table, idx); }
     var teamA = findTeam(session, match.teamA), teamB = findTeam(session, match.teamB);
     return { a: teamA.playerIds.slice(), b: teamB.playerIds.slice(), pausing: match.pausing };
+  }
+
+  function computeSixRoundPairing(session, match, idx){
+    var sched = sixSchedule(session.teams.map(function(t){return t.id;}))[idx % 3];
+    var teamA = findTeam(session, sched.play[0]), teamB = findTeam(session, sched.play[1]);
+    var teamPause = findTeam(session, sched.pause);
+    return { a: teamA.playerIds.slice(), b: teamB.playerIds.slice(), pausing: teamPause.playerIds.slice() };
+  }
+
+  function computeEightRoundPairing(session, tableIndex, idx){
+    var pairing = roundRobin4(session.teams.map(function(t){return t.id;}))[idx % 3][tableIndex];
+    var teamA = findTeam(session, pairing[0]), teamB = findTeam(session, pairing[1]);
+    return { a: teamA.playerIds.slice(), b: teamB.playerIds.slice(), pausing: null };
+  }
+
+  function findTeamByPlayerIds(session, ids){
+    return session.teams.find(function(t){
+      return t.playerIds.length===ids.length && t.playerIds.every(function(id){ return ids.indexOf(id)>=0; });
+    });
+  }
+
+  function recomputeTeamScores(session){
+    if(session.mode!==6 && !(session.mode===8 && session.eightRotation)) return;
+    var totals = {};
+    session.teams.forEach(function(t){ totals[t.id] = 0; });
+    session.matches.forEach(function(m){
+      m.rounds.forEach(function(r){
+        var teamA = findTeamByPlayerIds(session, r.pairing.a);
+        var teamB = findTeamByPlayerIds(session, r.pairing.b);
+        if(teamA) totals[teamA.id] += r.deltaA;
+        if(teamB) totals[teamB.id] += r.deltaB;
+      });
+    });
+    session.teamScores = totals;
   }
 
   function roundRobin4(teamIds){
@@ -1109,21 +1130,7 @@
     return escapeHtml(team.playerIds.map(playerName).join(" & "));
   }
 
-  function startEightRotationMatches(){
-    var session = findSession(nav.sessionId);
-    var pairing = roundRobin4(session.teams.map(function(t){return t.id;}))[session.cycle % 3];
-    var m1 = createMatch(session, pairing[0][0], pairing[0][1], null, 0);
-    var m2 = createMatch(session, pairing[1][0], pairing[1][1], null, 1);
-    session.matches.push(m1, m2);
-    save();
-    go("match", {sessionId:session.id, matchId:m1.id});
-  }
-
-  function startNextEightRotationRound(session){
-    go("matchIntro", {sessionId:session.id});
-  }
-
-  /* ----- 6-mode schedule ----- */
+  /* ----- 6-mode schedule (also used to derive per-round pairing) ----- */
   function sixSchedule(teamIds){
     var t = teamIds; // [T1,T2,T3]
     return [
@@ -1131,13 +1138,6 @@
       {play:[t[1],t[2]], pause:t[0]},
       {play:[t[0],t[2]], pause:t[1]}
     ];
-  }
-  function startNextSixMatch(session){
-    var sched = sixSchedule(session.teams.map(function(t){return t.id;}))[session.cycle % 3];
-    var m = createMatch(session, sched.play[0], sched.play[1], sched.pause);
-    session.matches.push(m);
-    save();
-    go("match", {sessionId:session.id, matchId:m.id});
   }
 
   /* =====================================================================
@@ -1229,6 +1229,22 @@
       html += progressTile(session.playerIds.map(function(pid){
         return { label: nameWithAvatar(pid,18), value: session.individualScores[pid]||0, color: avatarColorForPlayer(pid) };
       }));
+    } else if(session.mode===6 || (session.mode===8 && session.eightRotation)){
+      var teamColors = ["var(--jade)","var(--steel)","var(--gold)","var(--red)"];
+      html += '<div class="card section"><h3 style="margin-bottom:10px;">Punktestand</h3><table class="stat">';
+      session.teams.forEach(function(t, ti){
+        html += '<tr><td>'+t.playerIds.map(function(pid){return nameWithAvatar(pid,20);}).join(' ')+'</td><td style="text-align:right; font-variant-numeric:tabular-nums; font-weight:700;">'+(session.teamScores[t.id]||0)+'</td></tr>';
+      });
+      html += '</table></div>';
+      var pauseLabel = Array.isArray(f.pairing.pausing) ? f.pairing.pausing.map(playerName).join(" & ") : null;
+      html += '<div class="card card-gold section">' +
+                '<p class="faint" style="margin-bottom:4px;">Runde '+(match.rounds.length+1)+(draft.editingRoundId?' (Bearbeitung)':'')+(session.mode===8?' · Tisch '+(match.table+1):'')+'</p>' +
+                '<h3>'+f.pairing.a.map(function(pid){return nameWithAvatar(pid,22);}).join(' <span class="faint">&</span> ')+' <span class="faint">vs</span> '+f.pairing.b.map(function(pid){return nameWithAvatar(pid,22);}).join(' <span class="faint">&</span> ')+'</h3>' +
+                (pauseLabel ? '<p class="tag-pause" style="margin-top:6px;">⏸ Pause: '+escapeHtml(pauseLabel)+'</p>' : '') +
+              '</div>';
+      html += progressTile(session.teams.map(function(t, ti){
+        return { label: shortNameIds(t.playerIds), value: session.teamScores[t.id]||0, color: teamColors[ti % teamColors.length] };
+      }));
     } else {
       if(match.pausing){
         html += '<p class="tag-pause section">⏸ Pause: '+escapeHtml(teamNames(session, match.pausing))+'</p>';
@@ -1264,7 +1280,7 @@
   function matchTitle(session, match){
     if(session.mode===4) return "Spiel";
     if(session.mode===5) return "Spiel";
-    if(session.mode===6) return "Tichu-Turnier";
+    if(session.mode===6) return "Spiel";
     if(session.mode===8) return "Tisch "+(match.table+1);
     return "Partie";
   }
@@ -1424,6 +1440,7 @@
     }
     recomputeMatchTotals(session, match);
     recomputeIndividualScores(session);
+    recomputeTeamScores(session);
     save();
 
     draft.editingRoundId = null;
@@ -1436,13 +1453,18 @@
   function checkMatchEnd(session, match){
     var ended = false;
     if(session.mode===5){
-      var over = session.playerIds.filter(function(id){return (session.individualScores[id]||0) >= TARGET_SCORE;});
-      if(over.length>0){ ended = true; }
+      ended = session.playerIds.some(function(id){return (session.individualScores[id]||0) >= TARGET_SCORE;});
+    } else if(session.mode===6 || (session.mode===8 && session.eightRotation)){
+      var scores = session.teamScores||{};
+      ended = Object.keys(scores).some(function(tid){ return scores[tid] >= TARGET_SCORE; });
     } else {
       if(match.scoreA>=TARGET_SCORE || match.scoreB>=TARGET_SCORE){ ended = true; }
     }
     if(ended){
       match.status = "completed";
+      if(session.mode===8 && session.eightRotation){
+        session.matches.forEach(function(m){ if(m.status==="active") m.status = "completed"; });
+      }
       save();
       go("matchEnd", {sessionId:session.id, matchId:match.id});
     } else {
@@ -1451,7 +1473,14 @@
   }
 
   function roundHistoryRow(session, match, r, readOnly, roundNum){
-    var pairingLine = session.mode===5 ? (shortNameIds(r.pairing.a)+' vs '+shortNameIds(r.pairing.b)+' · '+playerName(r.pairing.pausing)+' pausiert') : null;
+    var pairingLine = null;
+    if(session.mode===5){
+      pairingLine = shortNameIds(r.pairing.a)+' vs '+shortNameIds(r.pairing.b)+' · '+playerName(r.pairing.pausing)+' pausiert';
+    } else if(session.mode===6){
+      pairingLine = shortNameIds(r.pairing.a)+' vs '+shortNameIds(r.pairing.b)+' · '+shortNameIds(r.pairing.pausing)+' pausiert';
+    } else if(session.mode===8 && session.eightRotation){
+      pairingLine = shortNameIds(r.pairing.a)+' vs '+shortNameIds(r.pairing.b);
+    }
 
     var tiles = [];
     Object.keys(r.calls).forEach(function(pid){
@@ -1526,7 +1555,6 @@
   function viewMatchEnd(){
     var session = findSession(nav.sessionId);
     var match = findMatch(session, nav.matchId);
-    var teamA = findTeam(session, match.teamA), teamB = findTeam(session, match.teamB);
     var html = topNav("Partie beendet");
 
     if(session.mode===5){
@@ -1546,6 +1574,26 @@
       return html;
     }
 
+    if(session.mode===6 || (session.mode===8 && session.eightRotation)){
+      var scores = session.teamScores||{};
+      var winnerTeamId = Object.keys(scores).sort(function(a,b){return scores[b]-scores[a];})[0];
+      var winnerTeam = findTeam(session, winnerTeamId);
+      html += '<div class="card card-gold section" style="text-align:center; padding:28px 18px;">' +
+                '<p class="faint">Glückwunsch!</p>' +
+                '<h1 style="margin:8px 0;">'+escapeHtml(winnerTeam.playerIds.map(playerName).join(" & "))+'</h1>' +
+                '<p class="muted">'+(scores[winnerTeamId]||0)+' Punkte</p>' +
+              '</div>';
+      html += '<div class="section"><h3 style="margin-bottom:10px;">Punktestand</h3><table class="stat"><tr><th>Team</th><th>Punkte</th></tr>';
+      session.teams.slice().sort(function(a,b){return (scores[b.id]||0)-(scores[a.id]||0);}).forEach(function(t){
+        html += '<tr><td>'+escapeHtml(t.playerIds.map(playerName).join(" & "))+'</td><td>'+(scores[t.id]||0)+'</td></tr>';
+      });
+      html += '</table></div>';
+      html += '<div class="section"><button class="btn btn-primary btn-block" data-action="finishSession">Spiel abschliessen</button></div>';
+      html += '<div class="section"><button class="btn btn-ghost btn-block" data-action="backToMatchForEdit">↩ Fehler bei der Eingabe? Letzte Runde korrigieren</button></div>';
+      return html;
+    }
+
+    var teamA = findTeam(session, match.teamA), teamB = findTeam(session, match.teamB);
     var winA = match.scoreA>=TARGET_SCORE;
     html += '<div class="card card-gold section" style="text-align:center; padding:28px 18px;">' +
               '<p class="faint">Glückwunsch!</p>' +
@@ -1555,17 +1603,11 @@
 
     if(session.mode===4){
       html += '<div class="section"><button class="btn btn-primary btn-block" data-action="finishSession">Spiel abschliessen</button></div>';
-    } else if(session.mode===6){
-      html += '<div class="section"><button class="btn btn-primary btn-block" data-action="nextSixMatch">Nächste Partie</button></div>';
-      html += '<div class="section"><button class="btn btn-ghost btn-block" data-action="finishSession">Spiel stattdessen beenden</button></div>';
     } else if(session.mode===8){
       var otherActive = session.matches.some(function(m){return m.id!==match.id && m.status==="active";});
       if(otherActive){
         html += '<p class="muted section">Der andere Tisch läuft noch weiter.</p>';
         html += '<div class="section"><button class="btn btn-primary btn-block" data-action="goHome">Zurück zur Übersicht</button></div>';
-      } else if(session.eightRotation){
-        html += '<div class="section"><button class="btn btn-primary btn-block" data-action="nextEightRotation">Nächste Runde (beide Tische)</button></div>';
-        html += '<div class="section"><button class="btn btn-ghost btn-block" data-action="finishSession">Spiel stattdessen beenden</button></div>';
       } else {
         html += '<div class="section"><button class="btn btn-primary btn-block" data-action="restartFixedTable" data-table="'+match.table+'">Neue Partie an diesem Tisch</button></div>';
         html += '<div class="section"><button class="btn btn-ghost btn-block" data-action="finishSession">Spiel beenden</button></div>';
@@ -1579,18 +1621,6 @@
     go("match", {sessionId: nav.sessionId, matchId: nav.matchId});
   }
 
-  function nextSixMatch(){
-    var session = findSession(nav.sessionId);
-    session.cycle = (session.cycle||0) + 1;
-    save();
-    startNextSixMatch(session);
-  }
-  function nextEightRotation(){
-    var session = findSession(nav.sessionId);
-    session.cycle = (session.cycle||0) + 1;
-    save();
-    startNextEightRotationRound(session);
-  }
   function restartFixedTable(table){
     var session = findSession(nav.sessionId);
     var t = parseInt(table,10);
@@ -1634,15 +1664,19 @@
               '<p class="faint" style="margin-top:6px;">Status: '+(session.status==="aborted"?"abgebrochen":"abgeschlossen")+'</p>' +
             '</div>';
 
-    if(session.mode!==5){
+    if(session.mode!==5 && session.mode!==6){
       html += '<div class="section"><h3 style="margin-bottom:10px;">Partien</h3><p class="faint" style="margin-bottom:10px;">Auf eine Partie tippen für die Runden im Detail.</p><div class="grid">';
       session.matches.forEach(function(m){
-        var teamA = findTeam(session, m.teamA), teamB = findTeam(session, m.teamB);
+        var label;
+        if(m.teamA && m.teamB){
+          var teamA = findTeam(session, m.teamA), teamB = findTeam(session, m.teamB);
+          label = '<span><b>'+escapeHtml(teamA.playerIds.map(playerName).join(" & "))+'</b> vs <b>'+escapeHtml(teamB.playerIds.map(playerName).join(" & "))+'</b></span>' +
+                  '<span class="badge">'+m.scoreA+' : '+m.scoreB+'</span>';
+        } else {
+          label = '<span><b>Tisch '+(m.table+1)+'</b> (rotierend)</span>';
+        }
         html += '<div class="card" style="cursor:pointer;" data-action="openMatchHistory" data-id="'+m.id+'">' +
-                  '<div class="row" style="justify-content:space-between;">' +
-                    '<span><b>'+escapeHtml(teamA.playerIds.map(playerName).join(" & "))+'</b> vs <b>'+escapeHtml(teamB.playerIds.map(playerName).join(" & "))+'</b></span>' +
-                    '<span class="badge">'+m.scoreA+' : '+m.scoreB+'</span>' +
-                  '</div>' +
+                  '<div class="row" style="justify-content:space-between;">' + label + '</div>' +
                   '<p class="faint" style="margin-top:6px;">'+m.rounds.length+' Runde(n) · '+(m.status==="aborted"?"abgebrochen":"beendet")+' · Details ansehen →</p>' +
                 '</div>';
       });
@@ -1655,6 +1689,13 @@
       html += '<div class="section"><h3 style="margin-bottom:10px;">Endstand</h3><table class="stat"><tr><th>Person</th><th>Punkte</th></tr>';
       session.playerIds.slice().sort(function(a,b){return (session.individualScores[b]||0)-(session.individualScores[a]||0);}).forEach(function(pid){
         html += '<tr><td>'+nameWithAvatar(pid,20)+'</td><td>'+(session.individualScores[pid]||0)+'</td></tr>';
+      });
+      html += '</table></div>';
+    } else if(session.mode===6 || (session.mode===8 && session.eightRotation)){
+      var scoresSum = session.teamScores||{};
+      html += '<div class="section"><h3 style="margin-bottom:10px;">Endstand</h3><table class="stat"><tr><th>Team</th><th>Punkte</th></tr>';
+      session.teams.slice().sort(function(a,b){return (scoresSum[b.id]||0)-(scoresSum[a.id]||0);}).forEach(function(t){
+        html += '<tr><td>'+t.playerIds.map(function(pid){return nameWithAvatar(pid,20);}).join(' ')+'</td><td>'+(scoresSum[t.id]||0)+'</td></tr>';
       });
       html += '</table></div>';
     }
@@ -1680,6 +1721,13 @@
       html += '<div class="card section"><h3 style="margin-bottom:10px;">Endstand</h3><table class="stat">';
       session.playerIds.slice().sort(function(a,b){return (session.individualScores[b]||0)-(session.individualScores[a]||0);}).forEach(function(pid){
         html += '<tr><td>'+nameWithAvatar(pid,20)+'</td><td style="text-align:right; font-variant-numeric:tabular-nums; font-weight:700;">'+(session.individualScores[pid]||0)+'</td></tr>';
+      });
+      html += '</table></div>';
+    } else if(session.mode===6 || (session.mode===8 && session.eightRotation)){
+      var scoresH = session.teamScores||{};
+      html += '<div class="card section"><h3 style="margin-bottom:10px;">Endstand</h3><table class="stat">';
+      session.teams.slice().sort(function(a,b){return (scoresH[b.id]||0)-(scoresH[a.id]||0);}).forEach(function(t){
+        html += '<tr><td>'+t.playerIds.map(function(pid){return nameWithAvatar(pid,20);}).join(' ')+'</td><td style="text-align:right; font-variant-numeric:tabular-nums; font-weight:700;">'+(scoresH[t.id]||0)+'</td></tr>';
       });
       html += '</table></div>';
     } else {
@@ -1791,21 +1839,18 @@
       {id:uid(), playerIds:[sh[2],sh[3]]},
       {id:uid(), playerIds:[sh[4],sh[5]]}
     ];
-    var session = {id:uid(), createdAt:createdAt, mode:6, playerIds:ids, eightRotation:false, status:"active", teams:teams, matches:[], cycle:0, demo:true};
-    var sched = sixSchedule(teams.map(function(t){return t.id;}));
-    var numMatches = randomInt(1,3);
-    var finalOutcome = 'completed';
-    for(var i=0;i<numMatches;i++){
-      var s = sched[i%3];
-      var match = createMatch(session, s.play[0], s.play[1], s.pause);
-      session.matches.push(match);
-      var teamAref = findTeam(session, match.teamA), teamBref = findTeam(session, match.teamB);
-      var pairingFn = (function(ta,tb,pause){ return function(){ return {a:ta.playerIds, b:tb.playerIds, pausing:pause}; }; })(teamAref, teamBref, match.pausing);
-      var isLast = (i===numMatches-1);
-      var result = runDemoMatch(session, match, pairingFn, demoTeamEndCheck, isLast?outcome:'completed');
-      if(result!=='completed'){ finalOutcome = result; break; }
-    }
-    session.status = finalOutcome;
+    var session = {id:uid(), createdAt:createdAt, mode:6, playerIds:ids, eightRotation:false, status:"active", teams:teams, matches:[], teamScores:{}, demo:true};
+    teams.forEach(function(t){ session.teamScores[t.id]=0; });
+    var match = createMatch(session, null, null, null);
+    session.matches.push(match);
+    var pairingFn = function(idx){ return computeSixRoundPairing(session, match, idx); };
+    var endCheck = function(s){
+      recomputeTeamScores(s);
+      return Object.keys(s.teamScores).some(function(tid){ return (s.teamScores[tid]||0) >= TARGET_SCORE; });
+    };
+    var result = runDemoMatch(session, match, pairingFn, endCheck, outcome);
+    recomputeTeamScores(session);
+    session.status = result;
     return session;
   }
 
@@ -1814,7 +1859,7 @@
     var sh = shuffle(ids);
     var teams = [0,1,2,3].map(function(i){ return {id:uid(), playerIds:[sh[i*2],sh[i*2+1]]}; });
     var rotation = Math.random()<0.5;
-    var session = {id:uid(), createdAt:createdAt, mode:8, playerIds:ids, eightRotation:rotation, status:"active", teams:teams, matches:[], cycle:0, demo:true};
+    var session = {id:uid(), createdAt:createdAt, mode:8, playerIds:ids, eightRotation:rotation, status:"active", teams:teams, matches:[], demo:true};
     var finalOutcome = 'completed';
 
     if(!rotation){
@@ -1831,25 +1876,32 @@
         if(result!=='completed'){ finalOutcome = result; }
       }
     } else {
-      var rr = roundRobin4(teams.map(function(t){return t.id;}));
-      var numRounds = randomInt(1,3);
-      outer:
-      for(var i=0;i<numRounds;i++){
-        var pairing2 = rr[i%3];
-        var m1b = createMatch(session, pairing2[0][0], pairing2[0][1], null, 0);
-        var m2b = createMatch(session, pairing2[1][0], pairing2[1][1], null, 1);
-        session.matches.push(m1b, m2b);
-        var isLastRound = (i===numRounds-1);
-        var pair2 = [m1b, m2b];
-        for(var j=0;j<2;j++){
-          var mm = pair2[j];
-          var ta2 = findTeam(session, mm.teamA), tb2 = findTeam(session, mm.teamB);
-          var pairingFn2 = (function(ta3,tb3){ return function(){ return {a:ta3.playerIds, b:tb3.playerIds, pausing:null}; }; })(ta2,tb2);
-          var thisOutcome2 = (isLastRound && j===1) ? outcome : 'completed';
-          var res = runDemoMatch(session, mm, pairingFn2, demoTeamEndCheck, thisOutcome2);
-          if(res!=='completed'){ finalOutcome = res; break outer; }
+      session.teamScores = {};
+      teams.forEach(function(t){ session.teamScores[t.id]=0; });
+      var m1b = createMatch(session, null, null, null, 0);
+      var m2b = createMatch(session, null, null, null, 1);
+      session.matches.push(m1b, m2b);
+      var abortAt = outcome==='aborted' ? randomInt(2,5) : null;
+      var activeAt = outcome==='active' ? randomInt(3,7) : null;
+      var guard = 0, ended = null;
+      while(guard<80 && !ended){
+        [m1b,m2b].forEach(function(m){
+          var idx = m.rounds.length;
+          var pairing = computeEightRoundPairing(session, m.table, idx);
+          m.rounds.push(buildDemoRound(pairing));
+          recomputeMatchTotals(session, m);
+        });
+        recomputeTeamScores(session);
+        guard++;
+        if(abortAt && guard>=abortAt){ ended='aborted'; }
+        else if(activeAt && guard>=activeAt){ ended='active'; }
+        else {
+          var over = Object.keys(session.teamScores).some(function(tid){ return session.teamScores[tid] >= TARGET_SCORE; });
+          if(over){ ended='completed'; }
         }
       }
+      finalOutcome = ended || 'completed';
+      m1b.status = finalOutcome; m2b.status = finalOutcome;
     }
     session.status = finalOutcome;
     return session;
@@ -2023,7 +2075,7 @@
           if(teamB) teamB.playerIds.forEach(function(pid){ ensure(pid).swings.push({value:maxB-minB, mode:session.mode, sessionId:session.id, date:session.createdAt}); });
         }
 
-        if(session.mode!==5 && match.status==='completed' && match.scoreA!==match.scoreB){
+        if(session.mode!==5 && match.teamA && match.teamB && match.status==='completed' && match.scoreA!==match.scoreB){
           var ta = findTeam(session, match.teamA), tb = findTeam(session, match.teamB);
           var winners = match.scoreA>match.scoreB ? ta.playerIds : tb.playerIds;
           var losers = match.scoreA>match.scoreB ? tb.playerIds : ta.playerIds;
@@ -2049,6 +2101,14 @@
           var winnerId = session.playerIds.slice().sort(function(a,b){return (finalScores[b]||0)-(finalScores[a]||0);})[0];
           session.playerIds.forEach(function(pid){ recordContest(pid, 5, pid===winnerId); });
         }
+      }
+
+      if((session.mode===6 || (session.mode===8 && session.eightRotation)) && session.status==='completed'){
+        var tScores = session.teamScores || {};
+        var winnerTeamId = Object.keys(tScores).sort(function(a,b){return tScores[b]-tScores[a];})[0];
+        session.teams.forEach(function(t){
+          t.playerIds.forEach(function(pid){ recordContest(pid, session.mode, t.id===winnerTeamId); });
+        });
       }
 
       session.playerIds.forEach(function(pid){
@@ -2320,7 +2380,6 @@
     resetPairsIntro: resetPairsIntro,
     randomPairsIntro: randomPairsIntro,
     startFiveMatch: startFiveMatch,
-    startEightRotationMatches: startEightRotationMatches,
     setCallType: function(el){ setCallType(el.getAttribute("data-pid"), el.getAttribute("data-type")); },
     setCallResult: function(el){ setCallResult(el.getAttribute("data-pid"), el.getAttribute("data-result")); },
     setDoubleWin: function(el){ setDoubleWin(el.getAttribute("data-side")); },
@@ -2329,8 +2388,6 @@
     editRound: function(el){ editRound(el.getAttribute("data-id")); },
     cancelEditRound: cancelEditRound,
     matchMenu: matchMenu,
-    nextSixMatch: nextSixMatch,
-    nextEightRotation: nextEightRotation,
     restartFixedTable: function(el){ restartFixedTable(el.getAttribute("data-table")); },
     switchTable: function(el){ switchTable(el.getAttribute("data-id")); },
     finishSession: finishSession,
