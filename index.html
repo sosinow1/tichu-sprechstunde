@@ -16,10 +16,10 @@
 <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=Fraunces:opsz,wght@9..144,500;9..144,600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#141414;
-    --ink-2:#1C1C1C;
-    --ink-3:#252525;
-    --hairline:#3A3A3A;
+    --ink:#E4E4E2;
+    --ink-2:#F5F5F3;
+    --ink-3:#DADAD6;
+    --hairline:#C4C4C0;
     --gold:#E8B923;
     --gold-dim:#8A6A16;
     --jade:#2FA84F;
@@ -28,31 +28,31 @@
     --steel-dim:#1F6E9C;
     --red:#D93A2B;
     --red-dim:#8F241A;
-    --text:#F2F0EC;
-    --text-dim:#BFBFBF;
-    --text-faint:#8A8A8A;
+    --text:#1A1A1A;
+    --text-dim:#4A4A4A;
+    --text-faint:#767672;
     --radius:14px;
     --font-ui:'Manrope',system-ui,sans-serif;
     --font-display:'Fraunces',serif;
   }
   @media (prefers-color-scheme: dark){
     :root:not([data-theme="light"]){
-      --ink:#141414; --ink-2:#1C1C1C; --ink-3:#252525; --hairline:#3A3A3A;
+      --ink:#E4E4E2; --ink-2:#F5F5F3; --ink-3:#DADAD6; --hairline:#C4C4C0;
       --gold:#E8B923; --gold-dim:#8A6A16; --jade:#2FA84F; --jade-dim:#1F7A38;
       --steel:#2E9BD6; --steel-dim:#1F6E9C; --red:#D93A2B; --red-dim:#8F241A;
-      --text:#F2F0EC; --text-dim:#BFBFBF; --text-faint:#8A8A8A;
+      --text:#1A1A1A; --text-dim:#4A4A4A; --text-faint:#767672;
     }
   }
   :root[data-theme="dark"]{
-    --ink:#141414; --ink-2:#1C1C1C; --ink-3:#252525; --hairline:#3A3A3A;
+    --ink:#E4E4E2; --ink-2:#F5F5F3; --ink-3:#DADAD6; --hairline:#C4C4C0;
     --gold:#E8B923; --gold-dim:#8A6A16; --jade:#2FA84F; --jade-dim:#1F7A38;
     --steel:#2E9BD6; --steel-dim:#1F6E9C; --red:#D93A2B; --red-dim:#8F241A;
-    --text:#F2F0EC; --text-dim:#BFBFBF; --text-faint:#8A8A8A;
+    --text:#1A1A1A; --text-dim:#4A4A4A; --text-faint:#767672;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0; height:100%;}
   body{
-    background:radial-gradient(1200px 800px at 15% -10%, #241715 0%, var(--ink) 55%);
+    background:radial-gradient(1200px 800px at 15% -10%, #F1E2D8 0%, var(--ink) 55%);
     color:var(--text);
     font-family:var(--font-ui);
     font-size:16px;
@@ -109,6 +109,11 @@
   .score-side-names{display:flex; flex-direction:column; gap:4px;}
   .stats-grid{display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));}
   .stats-grid > .card{margin-bottom:0;}
+  .user-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;}
+  @media (max-width:640px){ .user-grid{grid-template-columns:repeat(2, 1fr);} }
+  .user-tile{background:var(--ink-2); border:1px solid var(--hairline); border-radius:var(--radius); padding:16px 10px; text-align:center; position:relative;}
+  .user-tile-remove{position:absolute; top:8px; right:8px; background:none; border:none; color:var(--text-faint); font-size:16px; cursor:pointer; padding:4px;}
+  .user-tile-name{margin-top:10px; font-weight:700; font-size:14px; cursor:pointer; word-break:break-word;}
   .card{
     background:var(--ink-2); border:1px solid var(--hairline); border-radius:var(--radius);
     padding:18px;
@@ -177,7 +182,7 @@
   .points-col{flex:1;}
   .sum-check{text-align:center; font-weight:700; font-size:14px; padding:10px; border-radius:10px; margin-top:10px;}
   .sum-ok{background:rgba(47,168,79,0.15); color:var(--jade);}
-  .sum-bad{background:rgba(217,58,43,0.18); color:#F7C2B8;}
+  .sum-bad{background:rgba(217,58,43,0.18); color:var(--red-dim);}
   .dbl-row{display:flex; gap:10px;}
   .dbl-btn{flex:1; border-radius:10px; border:1.5px solid var(--hairline); background:transparent; color:var(--text-dim); padding:12px; font-family:var(--font-ui); font-weight:700; font-size:13.5px; cursor:pointer;}
   .dbl-btn.on-a{border-color:var(--jade); background:rgba(47,168,79,0.15); color:var(--jade);}
@@ -185,8 +190,24 @@
   .round-item{display:flex; align-items:center; justify-content:space-between; gap:10px; padding:12px 4px; border-bottom:1px solid var(--hairline); font-size:14px;}
   .round-item:last-child{border-bottom:none;}
   .round-meta{color:var(--text-faint); font-size:12.5px;}
+  .round-tile{background:var(--ink-2); border:1px solid var(--hairline); border-radius:var(--radius); padding:18px;}
+  .round-tile-score{display:flex; align-items:baseline; justify-content:center; gap:16px; margin-bottom:12px; font-family:var(--font-display);}
+  .round-tile-score .rt-num{font-size:36px; font-weight:600; font-variant-numeric:tabular-nums;}
+  .round-tile-score .rt-sep{font-size:22px; color:var(--text-faint);}
+  .event-tiles{display:flex; flex-wrap:wrap; gap:10px; justify-content:center;}
+  .event-tile{display:inline-flex; align-items:center; padding:14px 18px; border-radius:12px; font-weight:700; font-size:16px; border:1.5px solid transparent;}
+  .event-tile.et-tichu{background:rgba(47,168,79,0.16); color:var(--jade); border-color:var(--jade-dim);}
+  .event-tile.et-grosses{background:rgba(232,185,35,0.20); color:var(--gold-dim); border-color:var(--gold-dim);}
+  .event-tile.et-fail{background:rgba(217,58,43,0.16); color:var(--red-dim); border-color:var(--red-dim);}
+  .event-tile.et-doublewin{background:rgba(46,155,214,0.16); color:var(--steel); border-color:var(--steel-dim);}
+  .progress-row{display:flex; align-items:center; gap:12px; margin-bottom:14px;}
+  .progress-row:last-child{margin-bottom:0;}
+  .progress-label{width:100px; flex-shrink:0; font-size:13px; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .progress-track{flex:1; height:14px; background:var(--ink-3); border-radius:999px; overflow:hidden;}
+  .progress-fill{height:100%; border-radius:999px;}
+  .progress-remain{width:76px; flex-shrink:0; text-align:right; font-size:12.5px; color:var(--text-faint); font-variant-numeric:tabular-nums;}
   .pencil{background:transparent; border:none; color:var(--text-faint); font-size:17px; cursor:pointer; padding:6px;}
-  .warn-banner{background:rgba(232,185,35,0.15); border:1px solid var(--gold-dim); color:#F6DFA3; border-radius:10px; padding:12px 14px; font-size:13.5px; margin-bottom:14px;}
+  .warn-banner{background:rgba(232,185,35,0.15); border:1px solid var(--gold-dim); color:var(--gold-dim); border-radius:10px; padding:12px 14px; font-size:13.5px; margin-bottom:14px;}
   .tag-doublewin{color:var(--red); font-weight:700;}
   .modal-backdrop{position:fixed; inset:0; background:rgba(6,10,8,0.72); display:flex; align-items:center; justify-content:center; padding:24px; z-index:50;}
   .modal{background:var(--ink-2); border:1px solid var(--hairline); border-radius:16px; padding:22px; max-width:380px; width:100%;}
@@ -281,6 +302,32 @@
 
   function nameWithAvatar(pid, size){
     return '<span class="avatar-inline">'+avatarForPlayer(pid, size)+'<span>'+escapeHtml(playerName(pid))+'</span></span>';
+  }
+
+  function avatarColorForPlayer(pid){
+    function avatarColorVar(c){ return {red:"var(--red)", gold:"var(--gold)", green:"var(--jade)", blue:"var(--steel)"}[c] || "var(--gold)"; }
+    var p = findPlayer(pid);
+    if(p && p.avatarId){
+      var av = AVATARS.find(function(a){ return a.id===p.avatarId; });
+      if(av) return avatarColorVar(av.color);
+    }
+    return "var(--gold)";
+  }
+
+  function progressTile(rows){
+    var html = '<div class="card section"><h3 style="margin-bottom:12px;">Fortschritt zu '+TARGET_SCORE+'</h3>';
+    rows.forEach(function(row){
+      var pct = Math.max(0, Math.min(100, (row.value/TARGET_SCORE)*100));
+      var remain = TARGET_SCORE - row.value;
+      var remainText = remain>0 ? remain+" fehlen" : "erreicht";
+      html += '<div class="progress-row">' +
+                '<div class="progress-label">'+row.label+'</div>' +
+                '<div class="progress-track"><div class="progress-fill" style="width:'+pct+'%; background:'+row.color+';"></div></div>' +
+                '<div class="progress-remain">'+remainText+'</div>' +
+              '</div>';
+    });
+    html += '</div>';
+    return html;
   }
 
   /* ---------- state ---------- */
@@ -406,7 +453,7 @@
               '<span class="row" style="gap:8px;">' +
                 '<button class="iconbtn" data-action="openStats" title="Statistiken">📊</button>' +
                 '<button class="iconbtn" data-action="openAllSessions" title="Alle Spiele">📜</button>' +
-                '<button class="iconbtn" data-action="openLibrary" title="Spielerbibliothek">☰</button>' +
+                '<button class="iconbtn" data-action="openLibrary" title="Users">☰</button>' +
               '</span>' +
             '</div>';
 
@@ -441,13 +488,23 @@
               '<button class="btn '+(state.demoActive?'btn-danger':'btn-secondary')+'" style="flex-shrink:0;" data-action="toggleDemo">'+(state.demoActive?'Entfernen':'Aktivieren')+'</button>' +
             '</div>';
 
+    html += '<div class="card section">' +
+              '<h3 style="margin-bottom:4px;">Daten sichern &amp; wiederherstellen</h3>' +
+              '<p class="faint" style="margin-bottom:12px;">Exportiert alle Spieler, Spiele und Statistiken als Datei — zum Sichern oder Übertragen auf ein anderes Gerät.</p>' +
+              '<div class="row">' +
+                '<button class="btn btn-secondary" data-action="exportData">⬇ Exportieren</button>' +
+                '<button class="btn btn-secondary" data-action="triggerImport">⬆ Importieren</button>' +
+              '</div>' +
+              '<input type="file" id="importFileInput" accept=".json,application/json" style="display:none;">' +
+            '</div>';
+
     return html;
   }
 
   function viewAllSessions(){
     var done = state.sessions.filter(function(s){return s.status!=="active";})
                   .sort(function(a,b){return b.createdAt-a.createdAt;});
-    var html = topNav("Alle Spiele");
+    var html = topNavWithIcons("Alle Spiele");
     html += '<div class="grid">';
     if(done.length){
       done.forEach(function(s){ html += sessionListItem(s, false); });
@@ -500,7 +557,7 @@
   function viewPlayerSelect(){
     if(!draft.selected) draft.selected = [];
     var html = '';
-    html += topNav(nav.forLibraryOnly ? "Spielerbibliothek" : "Wer spielt mit?");
+    html += nav.forLibraryOnly ? topNavWithIcons("Users") : topNav("Wer spielt mit?");
 
     if(!nav.forLibraryOnly){
       html += '<p class="muted" style="margin-bottom:16px;">Wählt 4, 5, 6 oder 8 Spieler:innen aus der Bibliothek.</p>';
@@ -513,7 +570,7 @@
                   '<input type="text" id="newPlayerInput" placeholder="Name eingeben" maxlength="24">' +
                   '<button class="btn btn-secondary" data-action="proceedToAvatarPick">Weiter</button>' +
                 '</div>';
-    } else {
+    } else if(!draft.pendingAvatarId){
       html += '<label class="field-label">Avatar für '+escapeHtml(draft.pendingName)+' auswählen</label>';
       html += '<div class="avatar-grid">';
       AVATARS.forEach(function(av){
@@ -524,22 +581,46 @@
       });
       html += '</div>';
       html += '<button class="btn btn-ghost btn-block" style="margin-top:14px;" data-action="cancelAddPlayer">Abbrechen</button>';
+    } else {
+      html += '<label class="field-label">Spielen mit oder ohne Tichu-Mätteli?</label>';
+      if(draft.matteliError){
+        html += '<div class="warn-banner">🚫 Ohne Tichu-Mätteli beginnen wir keine Fallbesprechung. Bitte Haltung überdenken und "Mit Tichu-Mätteli" wählen.</div>';
+      }
+      html += '<div class="row">' +
+                '<button class="btn btn-primary" data-action="answerMatteli" data-choice="mit">Mit Tichu-Mätteli</button>' +
+                '<button class="btn btn-secondary" data-action="answerMatteli" data-choice="ohne">Ohne Tichu-Mätteli</button>' +
+              '</div>';
+      html += '<button class="btn btn-ghost btn-block" style="margin-top:14px;" data-action="cancelAddPlayer">Abbrechen</button>';
     }
     html += '</div>';
 
-    html += '<div class="section"><h3 style="margin-bottom:12px;">Bibliothek</h3>';
+    html += '<div class="section"><h3 style="margin-bottom:12px;">'+(nav.forLibraryOnly?'Users':'Bibliothek')+'</h3>';
     if(state.players.length===0){
       html += '<div class="empty">Noch niemand in der Bibliothek. Fügt oben die erste Person hinzu.</div>';
+    } else if(nav.forLibraryOnly){
+      var libStats = state.sessions.length ? computeStatistics() : null;
+      html += '<div class="user-grid">';
+      state.players.slice().sort(function(a,b){return a.name.localeCompare(b.name,'de');}).forEach(function(p){
+        var wr = null;
+        if(libStats && libStats.players[p.id]){
+          var c = libStats.players[p.id].contests;
+          var w=0, t=0;
+          Object.keys(c).forEach(function(mode){ w+=c[mode].w; t+=c[mode].t; });
+          if(t>0) wr = w+"/"+t+" · "+pct(w,t)+"%";
+        }
+        html += '<div class="user-tile">' +
+                  '<button class="user-tile-remove" data-action="removePlayer" data-id="'+p.id+'">✕</button>' +
+                  avatarForPlayer(p.id, 68) +
+                  '<div class="user-tile-name" data-action="renamePlayer" data-id="'+p.id+'">'+escapeHtml(p.name)+(p.demo?' 🧪':'')+'</div>' +
+                  (wr ? '<div class="faint" style="margin-top:2px; font-size:12px;">'+wr+'</div>' : '') +
+                '</div>';
+      });
+      html += '</div>';
     } else {
       html += '<div class="row">';
       state.players.slice().sort(function(a,b){return a.name.localeCompare(b.name,'de');}).forEach(function(p){
         var sel = draft.selected.indexOf(p.id)>=0;
-        if(nav.forLibraryOnly){
-          html += '<span class="chip">'+avatarForPlayer(p.id,22)+'<span data-action="renamePlayer" data-id="'+p.id+'">'+escapeHtml(p.name)+(p.demo?' 🧪':'')+'</span>' +
-                   '<span class="chip-remove" data-action="removePlayer" data-id="'+p.id+'">✕</span></span>';
-        } else {
-          html += '<span class="chip'+(sel?' selected':'')+'" data-action="togglePlayer" data-id="'+p.id+'">'+avatarForPlayer(p.id,22)+escapeHtml(p.name)+(p.demo?' 🧪':'')+(sel?' ✓':'')+'</span>';
-        }
+        html += '<span class="chip'+(sel?' selected':'')+'" data-action="togglePlayer" data-id="'+p.id+'">'+avatarForPlayer(p.id,22)+escapeHtml(p.name)+(p.demo?' 🧪':'')+(sel?' ✓':'')+'</span>';
       });
       html += '</div>';
     }
@@ -569,6 +650,20 @@
            '</div>';
   }
 
+  function topNavWithIcons(title){
+    var html = '<div class="topbar">' +
+              '<button class="iconbtn" data-action="goHome">←</button>' +
+              '<h2 style="flex:1; text-align:center; font-size:17px;">Tichu-Sprechstunde</h2>' +
+              '<span class="row" style="gap:8px; flex-wrap:nowrap;">' +
+                '<button class="iconbtn" data-action="openStats" title="Statistiken">📊</button>' +
+                '<button class="iconbtn" data-action="openAllSessions" title="Alle Spiele">📜</button>' +
+                '<button class="iconbtn" data-action="openLibrary" title="Users">☰</button>' +
+              '</span>' +
+            '</div>';
+    html += '<h2 class="section" style="margin-top:2px;">'+escapeHtml(title)+'</h2>';
+    return html;
+  }
+
   function proceedToAvatarPick(){
     var input = document.getElementById("newPlayerInput");
     var name = (input.value||"").trim();
@@ -580,15 +675,30 @@
   function pickAvatar(avatarId){
     var used = state.players.some(function(p){return p.avatarId===avatarId;});
     if(used) return;
-    var p = {id:uid(), name:draft.pendingName, avatarId:avatarId, createdAt:Date.now()};
+    draft.pendingAvatarId = avatarId;
+    draft.matteliError = false;
+    render();
+  }
+
+  function answerMatteli(choice){
+    if(choice==="ohne"){
+      draft.matteliError = true;
+      render();
+      return;
+    }
+    var p = {id:uid(), name:draft.pendingName, avatarId:draft.pendingAvatarId, createdAt:Date.now()};
     state.players.push(p);
     save();
     draft.pendingName = null;
+    draft.pendingAvatarId = null;
+    draft.matteliError = false;
     render();
   }
 
   function cancelAddPlayer(){
     draft.pendingName = null;
+    draft.pendingAvatarId = null;
+    draft.matteliError = false;
     render();
   }
 
@@ -1116,7 +1226,9 @@
                 '<h3>'+f.pairing.a.map(function(pid){return nameWithAvatar(pid,22);}).join(' <span class="faint">&</span> ')+' <span class="faint">vs</span> '+f.pairing.b.map(function(pid){return nameWithAvatar(pid,22);}).join(' <span class="faint">&</span> ')+'</h3>' +
                 '<p class="tag-pause" style="margin-top:6px;">⏸ Pause: '+nameWithAvatar(f.pairing.pausing,18)+'</p>' +
               '</div>';
-      html += '<p class="target-note section">Ziel: '+TARGET_SCORE+' Punkte pro Person</p>';
+      html += progressTile(session.playerIds.map(function(pid){
+        return { label: nameWithAvatar(pid,18), value: session.individualScores[pid]||0, color: avatarColorForPlayer(pid) };
+      }));
     } else {
       if(match.pausing){
         html += '<p class="tag-pause section">⏸ Pause: '+escapeHtml(teamNames(session, match.pausing))+'</p>';
@@ -1126,7 +1238,10 @@
                 '<div class="score-mid"></div>' +
                 '<div class="score-side b"><div class="score-names">'+f.pairing.b.map(function(pid){return nameWithAvatar(pid,18);}).join(' <span class="faint">&</span> ')+'</div><div class="score-num">'+match.scoreB+'</div></div>' +
               '</div>';
-      html += '<p class="target-note section">Ziel: '+TARGET_SCORE+' Punkte</p>';
+      html += progressTile([
+        { label: shortNameIds(f.pairing.a), value: match.scoreA, color: "var(--jade)" },
+        { label: shortNameIds(f.pairing.b), value: match.scoreB, color: "var(--steel)" }
+      ]);
     }
 
     html += renderRoundForm(session, match);
@@ -1135,9 +1250,9 @@
     if(match.rounds.length===0){
       html += '<div class="empty">Noch keine Runde gespeichert.</div>';
     } else {
-      html += '<div class="card">';
+      html += '<div class="grid">';
       match.rounds.slice().reverse().forEach(function(r){
-        html += roundHistoryRow(session, match, r);
+        html += roundHistoryRow(session, match, r, false, match.rounds.indexOf(r)+1);
       });
       html += '</div>';
     }
@@ -1247,7 +1362,16 @@
     render();
   }
   function setCallResult(pid, result){
-    draft.roundForm.calls[pid].success = (result==="true");
+    var f = draft.roundForm;
+    f.calls[pid].success = (result==="true");
+    if(result==="true"){
+      // nur eine Person kann pro Runde als Erste fertig sein — alle anderen Ansagen gelten dann automatisch als gescheitert
+      Object.keys(f.calls).forEach(function(otherPid){
+        if(otherPid===pid) return;
+        var c = f.calls[otherPid];
+        if(c.type!=="none"){ c.success = false; }
+      });
+    }
     render();
   }
   function setDoubleWin(side){
@@ -1326,22 +1450,36 @@
     }
   }
 
-  function roundHistoryRow(session, match, r, readOnly){
-    var callsSummary = Object.keys(r.calls).map(function(pid){
-      var c = r.calls[pid];
-      if(c.type==="none") return null;
-      var label = c.type==="tichu" ? "Tichu" : "Gr.Tichu";
-      return playerName(pid)+" "+label+(c.success?" ✓":" ✗");
-    }).filter(Boolean).join(" · ");
-    var resultLine = r.deltaA+" : "+r.deltaB;
-    if(r.doubleWin){ resultLine += ' · <span class="tag-doublewin">Doppelsieg '+(r.doubleWin==='A'?shortNameIds(r.pairing.a):shortNameIds(r.pairing.b))+'</span>'; }
+  function roundHistoryRow(session, match, r, readOnly, roundNum){
     var pairingLine = session.mode===5 ? (shortNameIds(r.pairing.a)+' vs '+shortNameIds(r.pairing.b)+' · '+playerName(r.pairing.pausing)+' pausiert') : null;
-    return '<div class="round-item">' +
-             '<div><div>'+resultLine+'</div>' +
-             (pairingLine ? '<div class="round-meta">'+escapeHtml(pairingLine)+'</div>' : '') +
-             (callsSummary ? '<div class="round-meta">'+escapeHtml(callsSummary)+'</div>' : '') +
-             '</div>' +
-             (readOnly ? '' : '<button class="pencil" data-action="editRound" data-id="'+r.id+'">✎</button>') +
+
+    var tiles = [];
+    Object.keys(r.calls).forEach(function(pid){
+      var c = r.calls[pid];
+      if(c.type==="tichu" && c.success===true){ tiles.push('<span class="event-tile et-tichu">Tichu · '+escapeHtml(playerName(pid))+'</span>'); }
+    });
+    Object.keys(r.calls).forEach(function(pid){
+      var c = r.calls[pid];
+      if(c.type==="grosses" && c.success===true){ tiles.push('<span class="event-tile et-grosses">Gr. Tichu · '+escapeHtml(playerName(pid))+'</span>'); }
+    });
+    Object.keys(r.calls).forEach(function(pid){
+      var c = r.calls[pid];
+      if(c.type!=="none" && c.success===false){
+        var lbl = (c.type==="tichu"?"Tichu":"Gr. Tichu")+" ✗ · "+playerName(pid);
+        tiles.push('<span class="event-tile et-fail">'+escapeHtml(lbl)+'</span>');
+      }
+    });
+    if(r.doubleWin){
+      var side = r.doubleWin==='A' ? r.pairing.a : r.pairing.b;
+      tiles.push('<span class="event-tile et-doublewin">Doppelsieg · '+escapeHtml(side.map(playerName).join(" & "))+'</span>');
+    }
+
+    return '<div class="round-tile" style="position:relative;">' +
+             (roundNum ? '<p class="faint" style="text-align:center; margin-bottom:6px;">Runde '+roundNum+'</p>' : '') +
+             '<div class="round-tile-score"><span class="rt-num">'+r.deltaA+'</span><span class="rt-sep">:</span><span class="rt-num">'+r.deltaB+'</span></div>' +
+             (pairingLine ? '<p class="faint" style="text-align:center; margin:-4px 0 12px;">'+escapeHtml(pairingLine)+'</p>' : '') +
+             (tiles.length ? '<div class="event-tiles">'+tiles.join('')+'</div>' : '') +
+             (readOnly ? '' : '<button class="pencil" data-action="editRound" data-id="'+r.id+'" style="position:absolute; right:14px; top:50%; transform:translateY(-50%);">✎</button>') +
            '</div>';
   }
 
@@ -1557,9 +1695,9 @@
     if(match.rounds.length===0){
       html += '<div class="empty">Keine Runden gespeichert.</div>';
     } else {
-      html += '<div class="card">';
+      html += '<div class="grid">';
       match.rounds.slice().reverse().forEach(function(r){
-        html += roundHistoryRow(session, match, r, true);
+        html += roundHistoryRow(session, match, r, true, match.rounds.indexOf(r)+1);
       });
       html += '</div>';
     }
@@ -1584,7 +1722,7 @@
     var baseA, baseB;
     if(doubleWin==='A'){ baseA=200; baseB=0; }
     else if(doubleWin==='B'){ baseA=0; baseB=200; }
-    else { baseA = randomInt(0,100); baseB = 100-baseA; }
+    else { baseA = randomInt(0,20)*5; baseB = 100-baseA; }
     return { calls:calls, doubleWin:doubleWin, baseA:baseA, baseB:baseB };
   }
 
@@ -2077,7 +2215,7 @@
   }
 
   function viewStats(){
-    var html = topNav("Statistiken");
+    var html = topNavWithIcons("Statistiken");
     if(state.sessions.length===0){
       html += '<div class="empty">Noch keine Spiele gespielt — sobald ihr loslegt (oder Testdaten aktiviert), erscheinen hier Auswertungen.</div>';
       return html;
@@ -2104,6 +2242,50 @@
     return html;
   }
 
+  function exportData(){
+    var payload = JSON.stringify(state, null, 2);
+    var blob = new Blob([payload], {type: "application/json"});
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    var dateStr = new Date().toISOString().slice(0,10);
+    a.href = url;
+    a.download = "tichu-sicherung-"+dateStr+".json";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    setTimeout(function(){ try{ URL.revokeObjectURL(url); }catch(e){} }, 1000);
+  }
+
+  function triggerImport(){
+    var input = document.getElementById("importFileInput");
+    if(input) input.click();
+  }
+
+  function handleImportFile(file){
+    var reader = new FileReader();
+    reader.onload = function(e){
+      var parsed;
+      try{ parsed = JSON.parse(e.target.result); }
+      catch(err){ alert("Diese Datei ist keine gültige Sicherungsdatei (kein lesbares JSON)."); return; }
+      if(!parsed || !Array.isArray(parsed.players) || !Array.isArray(parsed.sessions)){
+        alert("Diese Datei hat nicht das erwartete Format einer Tichu-Sicherung.");
+        return;
+      }
+      confirmModal("Import wirklich durchführen? Alle auf diesem Gerät aktuell gespeicherten Spieler, Spiele und Statistiken werden dabei ersetzt und gehen unwiderruflich verloren.", function(){
+        state = {
+          players: parsed.players,
+          sessions: parsed.sessions,
+          demoActive: !!parsed.demoActive
+        };
+        save();
+        closeModal();
+        resetDraft();
+        go("home");
+      });
+    };
+    reader.readAsText(file);
+  }
+
   /* =====================================================================
      GLOBAL ACTIONS
   ===================================================================== */
@@ -2116,6 +2298,7 @@
     deleteSession: function(el){ deleteSession(el.getAttribute("data-id")); },
     proceedToAvatarPick: proceedToAvatarPick,
     pickAvatar: function(el){ pickAvatar(el.getAttribute("data-id")); },
+    answerMatteli: function(el){ answerMatteli(el.getAttribute("data-choice")); },
     cancelAddPlayer: cancelAddPlayer,
     removePlayer: function(el){ removePlayer(el.getAttribute("data-id")); },
     renamePlayer: function(el){ renamePlayer(el.getAttribute("data-id")); },
@@ -2157,7 +2340,9 @@
     openAllSessions: function(){ go("allSessions"); },
     openMatchHistory: function(el){ openMatchHistory(el.getAttribute("data-id")); },
     backToSessionSummary: backToSessionSummary,
-    backToMatchForEdit: backToMatchForEdit
+    backToMatchForEdit: backToMatchForEdit,
+    exportData: exportData,
+    triggerImport: triggerImport
   };
 
   document.addEventListener("click", function(e){
@@ -2222,6 +2407,13 @@
     if(el1){ el1.focus(); if(sel){ try{ el1.setSelectionRange(sel[0], sel[1]); }catch(e){} } }
   }
 
+  document.addEventListener("change", function(e){
+    if(e.target.id==="importFileInput" && e.target.files && e.target.files[0]){
+      handleImportFile(e.target.files[0]);
+      e.target.value = "";
+    }
+  });
+
   document.addEventListener("keydown", function(e){
     if(e.key==="Enter" && e.target.id==="newPlayerInput"){ proceedToAvatarPick(); }
   });
@@ -2230,14 +2422,6 @@
   load();
   render();
 })();
-</script>
-
-<script>
-if ("serviceWorker" in navigator) {
-  window.addEventListener("load", function() {
-    navigator.serviceWorker.register("sw.js").catch(function(e){ console.warn("SW registration failed", e); });
-  });
-}
 </script>
 </body>
 </html>
