@@ -2571,7 +2571,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
         .map(function(r){ return [nm(r.id), "-"+r.total+" Pkt. ("+r.c+"x)", r.id]; })
     )});
 
-    cats.push({ title:"💪 Nervenstärke", subtitle:"Höchste Ansage-Erfolgsquote, ab 2 Ansagen", rows: cap(
+    cats.push({ title:"💪 Nervenstärke", subtitle:"Höchste Ansage-Erfolgsquote", rows: cap(
       ids.filter(function(id){ return (P[id].tichuCalled+P[id].grossesCalled)>=2; })
         .map(function(id){ var c=P[id].tichuCalled+P[id].grossesCalled, s=P[id].tichuSuccess+P[id].grossesSuccess; return {id:id, q:pct(s,c), c:c, s:s}; })
         .sort(function(a,b){ return b.q-a.q || b.c-a.c; })
@@ -2585,14 +2585,14 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
         .map(function(s){ return [nm(s.id)+" · "+fmtDate(s.date).split(' · ')[0], s.value+" Pkt.", s.id]; })
     )});
 
-    cats.push({ title:"🙈 Angsthase", subtitle:"Seltenste Tichu-Ansagen pro gespielter Runde, ab 5 Runden", rows: cap(
+    cats.push({ title:"🙈 Angsthase", subtitle:"Seltenste Tichu-Ansagen pro gespielter Runde", rows: cap(
       ids.filter(function(id){ return P[id].roundsPlayed>=5; })
-        .map(function(id){ return {id:id, rate:(P[id].tichuCalled+P[id].grossesCalled)/P[id].roundsPlayed}; })
+        .map(function(id){ var calls=P[id].tichuCalled+P[id].grossesCalled, rds=P[id].roundsPlayed; return {id:id, rate:calls/rds, calls:calls, rds:rds}; })
         .sort(function(a,b){ return a.rate-b.rate; })
-        .map(function(r){ return [nm(r.id), (r.rate*100).toFixed(0)+"%", r.id]; })
+        .map(function(r){ return [nm(r.id), (r.rate*100).toFixed(0)+"% ("+r.calls+"/"+r.rds+")", r.id]; })
     )});
 
-    cats.push({ title:"⚔️ Nemesis-Paarungen", subtitle:"Häufigste Duo-Duelle, ab 3 gemeinsamen Runden", rows: cap(
+    cats.push({ title:"⚔️ Nemesis-Paarungen", subtitle:"Häufigste Duo-Duelle", rows: cap(
       Object.keys(S.matchupStats).map(function(k){ return S.matchupStats[k]; })
         .filter(function(m){ return m.total>=3; })
         .sort(function(a,b){ return b.total-a.total; })
@@ -2617,11 +2617,11 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
 
     var trendRows1 = ids.filter(function(id){ return P[id].trendDiffs.length>=2; })
       .map(function(id){ return {id:id, avg: P[id].trendDiffs.reduce(function(s,v){return s+v;},0)/P[id].trendDiffs.length}; });
-    cats.push({ title:"🌙 Spätzünder", subtitle:"Legt in der zweiten Spielhälfte am meisten zu, ab 2 Spielen", rows: cap(
+    cats.push({ title:"🌙 Spätzünder", subtitle:"Legt in der zweiten Spielhälfte am meisten zu", rows: cap(
       trendRows1.slice().sort(function(a,b){ return b.avg-a.avg; })
         .map(function(r){ return [nm(r.id), (r.avg>=0?"+":"")+r.avg.toFixed(0)+" Pkt.", r.id]; })
     )});
-    cats.push({ title:"🌅 Frühstarter", subtitle:"Lässt gegen Spielende am meisten nach, ab 2 Spielen", rows: cap(
+    cats.push({ title:"🌅 Frühstarter", subtitle:"Lässt gegen Spielende am meisten nach", rows: cap(
       trendRows1.slice().sort(function(a,b){ return a.avg-b.avg; })
         .map(function(r){ return [nm(r.id), (r.avg>=0?"+":"")+r.avg.toFixed(0)+" Pkt.", r.id]; })
     )});
@@ -2636,21 +2636,21 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
       )});
     });
 
-    cats.push({ title:"Tichu-Erfolgsquote", subtitle:"Normales Tichu, ab 2 Ansagen", rows: cap(
+    cats.push({ title:"Tichu-Erfolgsquote", subtitle:"Normales Tichu", rows: cap(
       ids.filter(function(id){ return P[id].tichuCalled>=2; })
         .map(function(id){ return {id:id, q:pct(P[id].tichuSuccess,P[id].tichuCalled), c:P[id].tichuCalled, s:P[id].tichuSuccess}; })
         .sort(function(a,b){ return b.q-a.q || b.c-a.c; })
         .map(function(r){ return [nm(r.id), r.q+"% ("+r.s+"/"+r.c+")", r.id]; })
     )});
 
-    cats.push({ title:"Grosses-Tichu-Erfolgsquote", subtitle:"Ab 1 Ansage", rows: cap(
+    cats.push({ title:"Grosses-Tichu-Erfolgsquote", subtitle:"Grosses Tichu", rows: cap(
       ids.filter(function(id){ return P[id].grossesCalled>=1; })
         .map(function(id){ return {id:id, q:pct(P[id].grossesSuccess,P[id].grossesCalled), c:P[id].grossesCalled, s:P[id].grossesSuccess}; })
         .sort(function(a,b){ return b.q-a.q || b.c-a.c; })
         .map(function(r){ return [nm(r.id), r.q+"% ("+r.s+"/"+r.c+")", r.id]; })
     )});
 
-    cats.push({ title:"Bestes Duo", subtitle:"Runden-Siegquote als Team, ab 3 gemeinsamen Runden", rows: cap(
+    cats.push({ title:"Bestes Duo", subtitle:"Runden-Siegquote als Team", rows: cap(
       Object.keys(S.pairStats).map(function(k){ return S.pairStats[k]; })
         .filter(function(p){ return p.total>=3; })
         .map(function(p){ return {ids:p.ids, q:pct(p.won,p.total), w:p.won, t:p.total}; })
@@ -2658,7 +2658,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
         .map(function(r){ return [r.ids.map(nm).join(" & "), r.q+"% ("+r.w+"/"+r.t+")"]; })
     )});
 
-    cats.push({ title:"Punkteschnitt pro Runde", subtitle:"Ø Rundenertrag der eigenen Seite, ab 5 Runden", rows: cap(
+    cats.push({ title:"Punkteschnitt pro Runde", subtitle:"Ø Rundenertrag der eigenen Seite", rows: cap(
       ids.filter(function(id){ return P[id].roundsPlayed>=5; })
         .map(function(id){ return {id:id, avg: (P[id].totalDelta/P[id].roundsPlayed)}; })
         .sort(function(a,b){ return b.avg-a.avg; })
