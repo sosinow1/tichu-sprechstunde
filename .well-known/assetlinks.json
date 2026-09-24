@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "ch.tichu.sprechstunde",
+        "sha256_cert_fingerprints": ["CA:2F:7D:F4:0F:A1:F5:53:70:5B:E2:70:81:6A:95:71:18:11:30:65:8D:8C:FC:25:AF:C6:BD:0A:24:38:31:3A"]
+      }
+    }]
