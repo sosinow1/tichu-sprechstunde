@@ -107,7 +107,9 @@
   .avatar-pick-btn:disabled{cursor:not-allowed;}
   .avatar-pick-btn:not(:disabled):active{border-color:var(--gold);}
   .score-side-names{display:flex; flex-direction:column; gap:4px;}
-  .stats-grid{display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(230px, 1fr));}
+  .stats-grid{display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));}
+  .stats-grid h3{font-size:20.5px; line-height:1.25;}
+  .stats-grid .faint{font-size:15px; line-height:1.35;}
   .stats-grid > .card{margin-bottom:0;}
   .user-grid{display:grid; grid-template-columns:repeat(4, 1fr); gap:14px;}
   @media (max-width:640px){ .user-grid{grid-template-columns:repeat(2, 1fr);} }
@@ -2550,8 +2552,8 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
 
     // ---- Ehrentafel mit Augenzwinkern (always first) ----
     cats.push({ title:"🎭 Grössenwahn-Index", subtitle:"Meiste gescheiterte Grosse Tichus", rows: cap(
-      ids.filter(function(id){ return P[id].grossesCalled>=1; })
-        .map(function(id){ return {id:id, fails:P[id].grossesCalled-P[id].grossesSuccess, c:P[id].grossesCalled}; })
+      ids.map(function(id){ return {id:id, fails:P[id].grossesCalled-P[id].grossesSuccess, c:P[id].grossesCalled}; })
+        .filter(function(r){ return r.fails>=1; })
         .sort(function(a,b){ return b.fails-a.fails || b.c-a.c; })
         .map(function(r){ return [nm(r.id), r.fails+"/"+r.c, r.id]; })
     )});
@@ -2562,18 +2564,18 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
         .map(function(id){ return [nm(id), P[id].minScoreEver+" Pkt.", id]; })
     )});
 
-    cats.push({ title:"💸 Bankrott-Garantie", subtitle:"Ø verlorene Punkte pro gescheiterter Ansage, ab 2x", rows: cap(
-      ids.filter(function(id){ return P[id].failCount>=2; })
-        .map(function(id){ return {id:id, avg:P[id].failPenaltySum/P[id].failCount, c:P[id].failCount}; })
-        .sort(function(a,b){ return b.avg-a.avg; })
-        .map(function(r){ return [nm(r.id), "-"+Math.round(r.avg)+" Ø ("+r.c+")", r.id]; })
+    cats.push({ title:"💸 Bankrott-Garantie", subtitle:"Insgesamt verschenkte Punkte durch gescheiterte Ansagen", rows: cap(
+      ids.map(function(id){ return {id:id, total:P[id].failPenaltySum, c:P[id].failCount}; })
+        .filter(function(r){ return r.total>0; })
+        .sort(function(a,b){ return b.total-a.total || b.c-a.c; })
+        .map(function(r){ return [nm(r.id), "-"+r.total+" Pkt. ("+r.c+"x)", r.id]; })
     )});
 
     cats.push({ title:"💪 Nervenstärke", subtitle:"Höchste Ansage-Erfolgsquote, ab 2 Ansagen", rows: cap(
       ids.filter(function(id){ return (P[id].tichuCalled+P[id].grossesCalled)>=2; })
-        .map(function(id){ var c=P[id].tichuCalled+P[id].grossesCalled, s=P[id].tichuSuccess+P[id].grossesSuccess; return {id:id, q:pct(s,c), c:c}; })
+        .map(function(id){ var c=P[id].tichuCalled+P[id].grossesCalled, s=P[id].tichuSuccess+P[id].grossesSuccess; return {id:id, q:pct(s,c), c:c, s:s}; })
         .sort(function(a,b){ return b.q-a.q || b.c-a.c; })
-        .map(function(r){ return [nm(r.id), r.q+"% bei "+r.c+" Ansagen", r.id]; })
+        .map(function(r){ return [nm(r.id), r.q+"% ("+r.s+"/"+r.c+")", r.id]; })
     )});
 
     var allSwings = [];
@@ -2604,7 +2606,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
     cats.push({ title:"🏃 Marathon-Partie", subtitle:"Meiste Runden in einer einzelnen Partie", rows: cap(
       S.marathon.filter(function(m){ return m.rounds>0; })
         .sort(function(a,b){ return b.rounds-a.rounds; })
-        .map(function(m){ return [m.mode+" Spieler · "+fmtDate(m.date).split(' · ')[0], m.rounds+" Runden"]; })
+        .map(function(m){ return [fmtDate(m.date).split(' · ')[0], m.rounds+" Runden"]; })
     )});
 
     cats.push({ title:"🦸 Last-Minute-Held", subtitle:"Doppelsieg geholt, als der Gegner bei ≥700 Punkten stand", rows: cap(
@@ -2617,11 +2619,11 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
       .map(function(id){ return {id:id, avg: P[id].trendDiffs.reduce(function(s,v){return s+v;},0)/P[id].trendDiffs.length}; });
     cats.push({ title:"🌙 Spätzünder", subtitle:"Legt in der zweiten Spielhälfte am meisten zu, ab 2 Spielen", rows: cap(
       trendRows1.slice().sort(function(a,b){ return b.avg-a.avg; })
-        .map(function(r){ return [nm(r.id), (r.avg>=0?"+":"")+r.avg.toFixed(0)+" Pkt. 2. Hälfte", r.id]; })
+        .map(function(r){ return [nm(r.id), (r.avg>=0?"+":"")+r.avg.toFixed(0)+" Pkt.", r.id]; })
     )});
     cats.push({ title:"🌅 Frühstarter", subtitle:"Lässt gegen Spielende am meisten nach, ab 2 Spielen", rows: cap(
       trendRows1.slice().sort(function(a,b){ return a.avg-b.avg; })
-        .map(function(r){ return [nm(r.id), r.avg.toFixed(0)+" Pkt. 2. Hälfte", r.id]; })
+        .map(function(r){ return [nm(r.id), (r.avg>=0?"+":"")+r.avg.toFixed(0)+" Pkt.", r.id]; })
     )});
 
     // ---- Bestenlisten (always after Ehrentafel) ----
