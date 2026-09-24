@@ -1,11 +1,14 @@
 {
   "name": "Tichu-Sprechstunde",
   "short_name": "Tichu",
+  "description": "Ansage- und Punktetracker für Tichu — Spielstände, Statistiken und Regeln für 4, 5, 6 oder 8 Personen.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#141414",
-  "theme_color": "#141414",
+  "orientation": "any",
+  "lang": "de-CH",
+  "background_color": "#E4E4E2",
+  "theme_color": "#E4E4E2",
   "icons": [
     {"src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any"},
     {"src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any"},
