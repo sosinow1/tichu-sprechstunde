@@ -2,7 +2,7 @@
       "relation": ["delegate_permission/common.handle_all_urls"],
       "target": {
         "namespace": "android_app",
-        "package_name": "ch.tichu.sprechstunde",
-        "sha256_cert_fingerprints": ["CA:2F:7D:F4:0F:A1:F5:53:70:5B:E2:70:81:6A:95:71:18:11:30:65:8D:8C:FC:25:AF:C6:BD:0A:24:38:31:3A"]
+        "package_name": "io.github.sosinow1.twa",
+        "sha256_cert_fingerprints": ["C8:81:DA:0D:C9:A3:65:CA:B5:B5:EB:7B:D6:22:0B:1A:4D:57:A8:76:5F:AB:04:88:BC:F5:FD:AB:13:39:EC:D4"]
       }
     }]
