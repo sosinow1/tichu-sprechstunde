@@ -299,9 +299,9 @@
 
   /* ---------- constants ---------- */
   var TARGET_SCORE = 1000;
-  var APP_VERSION = "1.1.0";
+  var APP_VERSION = "1.2.0";
   var STORAGE_KEY = "tichuAppState_v1";
-  var MODES = [4,5,6,8];
+  var MODES = [4,5,6,7,8];
 
   /* ---------- avatars (illustrated, embedded) ---------- */
   var AVATARS = [
@@ -794,7 +794,7 @@
       var valid = MODES.indexOf(n)>=0;
       html += '<div class="section">';
       if(n>0 && !valid){
-        html += '<div class="warn-banner">'+n+' ausgewählt — gültig sind 4, 5, 6 oder 8 Spieler:innen.</div>';
+        html += '<div class="warn-banner">'+n+' ausgewählt — gültig sind 4, 5, 6, 7 oder 8 Spieler:innen.</div>';
       }
       html += '<button class="btn btn-primary btn-block" '+(valid?'':'disabled')+' data-action="confirmPlayerSelect">Weiter'+(valid?' — '+n+' Spieler:innen':'')+'</button>';
       html += '</div>';
@@ -1029,13 +1029,14 @@
   function setTargetScore(val){ draft.targetScore = parseInt(val,10); render(); }
 
   function modeLabel(m){
-    return {4:"Klassisch zu viert",5:"Turnier zu fünft",6:"Turnier zu sechst",8:"Zwei Tische zu acht"}[m];
+    return {4:"Klassisch zu viert",5:"Turnier zu fünft",6:"Turnier zu sechst",7:"Turnier zu siebt",8:"Zwei Tische zu acht"}[m];
   }
   function modeDescription(m){
     return {
       4:"Zwei feste Teams à 2 spielen eine durchgehende Partie bis zum Zielscore.",
       5:"Reihum setzt jeweils eine Person aus, die restlichen vier bilden zwei Teams. Team-Punkte einer Runde werden voll beiden Teammitgliedern gutgeschrieben. Das Spiel endet, sobald eine Person den Zielscore individuell erreicht.",
       6:"Drei feste Teams à 2 spielen abwechselnd gegeneinander — jede Runde wechselt die Paarung, ein Team pausiert. Das Spiel endet, sobald ein Team den Zielscore erreicht.",
+      7:"Reihum setzen jeweils drei Personen aus, die übrigen vier bilden zwei Teams. Die Paarungen wechseln jede Runde, sodass jede Person mit vier verschiedenen Partner:innen spielt. Team-Punkte einer Runde werden voll beiden Teammitgliedern gutgeschrieben. Das Spiel endet, sobald eine Person den Zielscore individuell erreicht.",
       8:"Acht Personen, vier feste Teams à 2, verteilt auf zwei Tische. Wählt, ob die Paarungen fix bleiben oder reihum rotieren."
     }[m];
   }
@@ -1052,6 +1053,7 @@
   function neededPairs(mode){
     if(mode===4) return 2;
     if(mode===5) return 2; // formed fresh per match instead — this screen used for sitOut order only
+    if(mode===7) return 2; // formed fresh per round from the fixed rotation plan
     if(mode===6) return 3;
     if(mode===8) return 4;
   }
@@ -1059,6 +1061,7 @@
   function viewTeamSetup(){
     var mode = draft.mode;
     if(mode===5){ return viewSitOutOrder(); }
+    if(mode===7){ return viewSevenSeats(); }
 
     var ids = draft.selected;
     var need = neededPairs(mode);
@@ -1241,6 +1244,70 @@
   }
   function shuffleOrder(){ draft.order = shuffle(draft.order); render(); }
 
+  /* ----- 7-player rotation ----- */
+  /* Fester 7-Runden-Zyklus (Positionen 1-7, hier 0-indexiert).
+     Jede Person spielt 4 von 7 Runden, pausiert 3, nie mehr als 2 am Stueck,
+     und spielt mit 4 verschiedenen Partner:innen. */
+  var SEVEN_PLAN = [
+    {a:[3,4], b:[5,6]},
+    {a:[1,3], b:[2,4]},
+    {a:[0,1], b:[3,6]},
+    {a:[1,6], b:[2,5]},
+    {a:[0,4], b:[2,6]},
+    {a:[0,2], b:[3,5]},
+    {a:[0,5], b:[1,4]}
+  ];
+
+  function computeSevenRoundPairing(session, match, idx){
+    var seats = session.sevenSeats;
+    var plan = SEVEN_PLAN[idx % SEVEN_PLAN.length];
+    var playing = plan.a.concat(plan.b);
+    var pausing = [];
+    for(var i=0;i<7;i++){ if(playing.indexOf(i)<0){ pausing.push(seats[i]); } }
+    return {
+      a: plan.a.map(function(p){ return seats[p]; }),
+      b: plan.b.map(function(p){ return seats[p]; }),
+      pausing: pausing
+    };
+  }
+
+  /* ----- 7-player seat assignment screen ----- */
+  function viewSevenSeats(){
+    if(!draft.order) draft.order = draft.selected.slice();
+    var html = topNav("Reihenfolge festlegen");
+    html += '<p class="muted" style="margin-bottom:16px;">Legt fest, wer Position 1 bis 7 einnimmt. Danach läuft der Rotationsplan automatisch durch — pro Runde spielen vier, drei setzen aus.</p>';
+    html += '<div class="grid section">';
+    draft.order.forEach(function(id, idx){
+      html += '<div class="list-item">' +
+                '<span><span class="faint" style="margin-right:8px;">'+(idx+1)+'.</span>'+nameWithAvatar(id,26)+'</span>' +
+                '<span class="row" style="gap:6px;">' +
+                  '<button class="iconbtn" style="width:36px;height:36px;" data-action="moveOrder" data-idx="'+idx+'" data-dir="-1" '+(idx===0?'disabled':'')+'>↑</button>' +
+                  '<button class="iconbtn" style="width:36px;height:36px;" data-action="moveOrder" data-idx="'+idx+'" data-dir="1" '+(idx===draft.order.length-1?'disabled':'')+'>↓</button>' +
+                '</span>' +
+              '</div>';
+    });
+    html += '</div>';
+    html += '<div class="row section"><button class="btn btn-secondary" data-action="shuffleOrder">🎲 Zufällig mischen</button></div>';
+    html += '<div class="section"><button class="btn btn-primary btn-block" data-action="confirmSevenSeats">Spiel starten</button></div>';
+    return html;
+  }
+
+  function confirmSevenSeats(){
+    var session = {
+      id: uid(), createdAt: Date.now(), mode:7,
+      targetScore: draft.targetScore || TARGET_SCORE,
+      playerIds: draft.selected.slice(),
+      sevenSeats: draft.order.slice(),
+      status:"active", teams:[], matches:[],
+      individualScores: {}
+    };
+    draft.selected.forEach(function(id){ session.individualScores[id]=0; });
+    session.matches.push(createMatch(session, null, null, null));
+    state.sessions.push(session);
+    save();
+    go("match", {sessionId:session.id, matchId:session.matches[0].id});
+  }
+
   function confirmSitOutOrder(){
     var session = {
       id: uid(), createdAt: Date.now(), mode:5,
@@ -1351,6 +1418,7 @@
 
   function matchPairing(session, match, idx){
     if(session.mode===5){ return computeFiveRoundPairing(session, match, idx); }
+    if(session.mode===7){ return computeSevenRoundPairing(session, match, idx); }
     if(session.mode===6){ return computeSixRoundPairing(session, match, idx); }
     if(session.mode===8 && session.eightRotation){ return computeEightRoundPairing(session, match.table, idx); }
     var teamA = findTeam(session, match.teamA), teamB = findTeam(session, match.teamB);
@@ -1438,7 +1506,7 @@
   }
 
   function recomputeIndividualScores(session){
-    if(session.mode!==5) return;
+    if(session.mode!==5 && session.mode!==7) return;
     var totals = {};
     session.playerIds.forEach(function(id){ totals[id]=0; });
     session.matches.forEach(function(m){
@@ -1489,16 +1557,17 @@
       }
     }
 
-    if(session.mode===5){
+    if(session.mode===5 || session.mode===7){
+      var pauseIds = Array.isArray(f.pairing.pausing) ? f.pairing.pausing : [f.pairing.pausing];
       html += '<div class="card section"><h3 style="margin-bottom:10px;">Punktestand</h3><table class="stat">';
-      session.playerIds.forEach(function(pid){
+      session.playerIds.slice().sort(function(a,b){return (session.individualScores[b]||0)-(session.individualScores[a]||0);}).forEach(function(pid){
         html += '<tr><td>'+nameWithAvatar(pid,20)+'</td><td style="text-align:right; font-variant-numeric:tabular-nums; font-weight:700;">'+(session.individualScores[pid]||0)+'</td></tr>';
       });
       html += '</table></div>';
       html += '<div class="card card-gold section">' +
                 '<p class="faint" style="margin-bottom:4px;">Runde '+(match.rounds.length+1)+(draft.editingRoundId?' (Bearbeitung)':'')+'</p>' +
                 '<h3>'+f.pairing.a.map(function(pid){return nameWithAvatar(pid,22);}).join(' <span class="faint">&</span> ')+' <span class="faint">vs</span> '+f.pairing.b.map(function(pid){return nameWithAvatar(pid,22);}).join(' <span class="faint">&</span> ')+'</h3>' +
-                '<p class="tag-pause" style="margin-top:6px;">⏸ Pause: '+nameWithAvatar(f.pairing.pausing,18)+'</p>' +
+                '<p class="tag-pause" style="margin-top:6px;">⏸ Pause: '+pauseIds.map(function(pid){return nameWithAvatar(pid,18);}).join(' ')+'</p>' +
               '</div>';
       html += progressTile(session.playerIds.map(function(pid){
         return { label: nameWithAvatar(pid,18), value: session.individualScores[pid]||0, color: avatarColorForPlayer(pid) };
@@ -1554,6 +1623,7 @@
   function matchTitle(session, match){
     if(session.mode===4) return "Spiel";
     if(session.mode===5) return "Spiel";
+    if(session.mode===7) return "Spiel";
     if(session.mode===6) return "Spiel";
     if(session.mode===8) return "Tisch "+(match.table+1);
     return "Partie";
@@ -1732,7 +1802,7 @@
                '<span style="font-variant-numeric:tabular-nums;">'+cur+' → <b>'+(cur+delta)+'</b></span>' +
              '</div>';
     }
-    if(session.mode===5){
+    if(session.mode===5 || session.mode===7){
       f.pairing.a.forEach(function(pid){ html += line(playerName(pid), session.individualScores[pid]||0, proj.deltaA); });
       f.pairing.b.forEach(function(pid){ html += line(playerName(pid), session.individualScores[pid]||0, proj.deltaB); });
     } else if(session.mode===6 || (session.mode===8 && session.eightRotation)){
@@ -1893,7 +1963,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
 
   function checkMatchEnd(session, match){
     var ended = false;
-    if(session.mode===5){
+    if(session.mode===5 || session.mode===7){
       ended = session.playerIds.some(function(id){return (session.individualScores[id]||0) >= (session.targetScore||TARGET_SCORE);});
     } else if(session.mode===6 || (session.mode===8 && session.eightRotation)){
       var scores = session.teamScores||{};
@@ -1917,6 +1987,8 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
     var pairingLine = null;
     if(session.mode===5){
       pairingLine = shortNameIds(r.pairing.a)+' vs '+shortNameIds(r.pairing.b)+' · '+playerName(r.pairing.pausing)+' pausiert';
+    } else if(session.mode===7){
+      pairingLine = shortNameIds(r.pairing.a)+' vs '+shortNameIds(r.pairing.b)+' · '+shortNameIds(r.pairing.pausing)+' pausiert';
     } else if(session.mode===6){
       pairingLine = shortNameIds(r.pairing.a)+' vs '+shortNameIds(r.pairing.b)+' · '+shortNameIds(r.pairing.pausing)+' pausiert';
     } else if(session.mode===8 && session.eightRotation){
@@ -1998,7 +2070,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
     var match = findMatch(session, nav.matchId);
     var html = topNav("Partie beendet");
 
-    if(session.mode===5){
+    if(session.mode===5 || session.mode===7){
       var winnerId = session.playerIds.slice().sort(function(a,b){return (session.individualScores[b]||0)-(session.individualScores[a]||0);})[0];
       html += '<div class="card card-gold section" style="text-align:center; padding:28px 18px;">' +
                 '<p class="faint">Spiel gewonnen von</p>' +
@@ -2108,7 +2180,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
               '<p class="faint" style="margin-top:6px;">Status: '+(session.status==="aborted"?"abgebrochen":"abgeschlossen")+'</p>' +
             '</div>';
 
-    if(session.mode!==5 && session.mode!==6){
+    if(session.mode!==5 && session.mode!==6 && session.mode!==7){
       html += '<div class="section"><h3 style="margin-bottom:10px;">Partien</h3><p class="faint" style="margin-bottom:10px;">Auf eine Partie tippen für die Runden im Detail.</p><div class="grid">';
       session.matches.forEach(function(m){
         var label;
@@ -2129,7 +2201,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
       html += '<div class="section"><button class="btn btn-secondary btn-block" data-action="openMatchHistory" data-id="'+session.matches[0].id+'">Alle '+session.matches[0].rounds.length+' Runden im Detail ansehen</button></div>';
     }
 
-    if(session.mode===5){
+    if(session.mode===5 || session.mode===7){
       html += '<div class="section"><h3 style="margin-bottom:10px;">Endstand</h3><table class="stat"><tr><th>Person</th><th>Punkte</th></tr>';
       session.playerIds.slice().sort(function(a,b){return (session.individualScores[b]||0)-(session.individualScores[a]||0);}).forEach(function(pid){
         html += '<tr><td>'+nameWithAvatar(pid,20)+'</td><td>'+(session.individualScores[pid]||0)+'</td></tr>';
@@ -2161,7 +2233,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
     var match = findMatch(session, nav.matchId);
     var html = topNav(matchTitle(session, match));
 
-    if(session.mode===5){
+    if(session.mode===5 || session.mode===7){
       html += '<div class="card section"><h3 style="margin-bottom:10px;">Endstand</h3><table class="stat">';
       session.playerIds.slice().sort(function(a,b){return (session.individualScores[b]||0)-(session.individualScores[a]||0);}).forEach(function(pid){
         html += '<tr><td>'+nameWithAvatar(pid,20)+'</td><td style="text-align:right; font-variant-numeric:tabular-nums; font-weight:700;">'+(session.individualScores[pid]||0)+'</td></tr>';
@@ -2494,7 +2566,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
         }
       });
 
-      if(session.mode===5 && session.matches[0]){
+      if((session.mode===5 || session.mode===7) && session.matches[0]){
         var running = {}, minSeen = {}, maxSeen = {};
         session.playerIds.forEach(function(id){ running[id]=0; minSeen[id]=0; maxSeen[id]=0; });
         session.matches[0].rounds.forEach(function(r){
@@ -2627,8 +2699,8 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
     )});
 
     // ---- Bestenlisten (always after Ehrentafel) ----
-    [4,5,6,8].forEach(function(mode){
-      cats.push({ title:"Siegquote — "+mode+" Spieler", subtitle:(mode===5?"Individuell":"Partien")+", ab 2 Partien", rows: cap(
+    [4,5,6,7,8].forEach(function(mode){
+      cats.push({ title:"Siegquote — "+mode+" Spieler", subtitle:((mode===5||mode===7)?"Individuell":"Partien")+", ab 2 Partien", rows: cap(
         ids.filter(function(id){ return P[id].contests[mode] && P[id].contests[mode].t>=2; })
           .map(function(id){ var c=P[id].contests[mode]; return {id:id, w:c.w, t:c.t, q:pct(c.w,c.t)}; })
           .sort(function(a,b){ return b.q-a.q || b.t-a.t; })
@@ -3064,6 +3136,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
     moveOrder: function(el){ moveOrder(el.getAttribute("data-idx"), el.getAttribute("data-dir")); },
     shuffleOrder: shuffleOrder,
     confirmSitOutOrder: confirmSitOutOrder,
+    confirmSevenSeats: confirmSevenSeats,
     pickForPairIntro: function(el){ pickForPairIntro(el.getAttribute("data-id")); },
     removePairIntro: function(el){ removePairIntro(parseInt(el.getAttribute("data-idx"),10)); },
     resetPairsIntro: resetPairsIntro,
