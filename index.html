@@ -31,28 +31,22 @@
     --text:#1A1A1A;
     --text-dim:#4A4A4A;
     --text-faint:#767672;
+    --glow:#F1E2D8;
     --radius:14px;
     --font-ui:'Manrope',system-ui,sans-serif;
     --font-display:'Fraunces',serif;
   }
-  @media (prefers-color-scheme: dark){
-    :root:not([data-theme="light"]){
-      --ink:#E4E4E2; --ink-2:#F5F5F3; --ink-3:#DADAD6; --hairline:#C4C4C0;
-      --gold:#E8B923; --gold-dim:#8A6A16; --jade:#2FA84F; --jade-dim:#1F7A38;
-      --steel:#2E9BD6; --steel-dim:#1F6E9C; --red:#D93A2B; --red-dim:#8F241A;
-      --text:#1A1A1A; --text-dim:#4A4A4A; --text-faint:#767672;
-    }
-  }
   :root[data-theme="dark"]{
-    --ink:#E4E4E2; --ink-2:#F5F5F3; --ink-3:#DADAD6; --hairline:#C4C4C0;
-    --gold:#E8B923; --gold-dim:#8A6A16; --jade:#2FA84F; --jade-dim:#1F7A38;
-    --steel:#2E9BD6; --steel-dim:#1F6E9C; --red:#D93A2B; --red-dim:#8F241A;
-    --text:#1A1A1A; --text-dim:#4A4A4A; --text-faint:#767672;
+    --ink:#14151A; --ink-2:#1E2027; --ink-3:#2B2E37; --hairline:#3C404B;
+    --gold:#F0C63A; --gold-dim:#C9A02A; --jade:#41C267; --jade-dim:#2F9B4E;
+    --steel:#4CB3E8; --steel-dim:#3189BE; --red:#EC5949; --red-dim:#C03D2E;
+    --text:#ECECEA; --text-dim:#C2C3C8; --text-faint:#8E9098;
+    --glow:#24262F;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
   html,body{margin:0; padding:0; height:100%;}
   body{
-    background:radial-gradient(1200px 800px at 15% -10%, #F1E2D8 0%, var(--ink) 55%);
+    background:radial-gradient(1200px 800px at 15% -10%, var(--glow) 0%, var(--ink) 55%);
     color:var(--text);
     font-family:var(--font-ui);
     font-size:18px;
@@ -213,14 +207,16 @@
   .warn-banner{background:rgba(232,185,35,0.15); border:1px solid var(--gold-dim); color:var(--gold-dim); border-radius:10px; padding:12px 14px; font-size:15px; margin-bottom:14px;}
   .tag-doublewin{color:var(--red); font-weight:700;}
   .modal-backdrop{position:fixed; inset:0; background:rgba(6,10,8,0.72); display:flex; align-items:center; justify-content:center; padding:24px; z-index:50;}
-  .dragon-fly-wrap{position:fixed; top:28%; left:0; width:100%; height:0; pointer-events:none; z-index:9999; overflow:visible;}
-  .dragon-rig{position:absolute; left:0; top:0; animation:dragonRig 2.6s cubic-bezier(.4,0,.2,1) forwards;}
-  .dragon-rig-dust{animation:dragonRigDust 3.4s cubic-bezier(.4,0,.2,1) forwards;}
+  .dragon-fly-wrap{position:fixed; top:28%; left:0; width:100%; height:0; pointer-events:none; z-index:9999; overflow:visible; display:flex; justify-content:center; align-items:flex-start;}
+  /* Die Rigs haben die volle Breite der Komposition (Drache + Atem), damit
+     sie als Ganzes zentriert werden und der Atem rechts nicht abgeschnitten wird. */
+  .dragon-rig{position:relative; flex:none; width:1131px; height:308px; scale:var(--ds,1); animation:dragonRig 2.6s cubic-bezier(.4,0,.2,1) forwards; --ds:0.26;}
+  .dragon-rig-dust{width:624px; height:308px; animation:dragonRigDust 3.4s cubic-bezier(.4,0,.2,1) forwards;}
   @keyframes dragonRigDust{
-    0%{ transform:translateX(-1235px); opacity:0; }
+    0%{ transform:translateX(calc(-50vw - 900px)); opacity:0; }
     8%{ opacity:1; }
-    26%{ transform:translateX(calc(50vw - 312px)); opacity:1; }
-    100%{ transform:translateX(calc(50vw - 312px)); opacity:1; }
+    26%{ transform:translateX(0); opacity:1; }
+    100%{ transform:translateX(0); opacity:1; }
   }
   .dragon-img.crumble{animation:dragonCrumble 3.3s ease-in forwards;}
   @keyframes dragonCrumble{
@@ -235,13 +231,13 @@
     100%{ opacity:0; transform:translate(var(--dx), var(--dy)) scale(0.25); }
   }
   @keyframes dragonRig{
-    0%{ transform:translateX(-1170px); opacity:0; }
+    0%{ transform:translateX(calc(-50vw - 900px)); opacity:0; }
     8%{ opacity:1; }
-    32%{ transform:translateX(30vw); opacity:1; }
-    74%{ transform:translateX(30vw); opacity:1; }
-    100%{ transform:translateX(calc(100vw + 390px)); opacity:0.5; }
+    32%{ transform:translateX(0); opacity:1; }
+    74%{ transform:translateX(0); opacity:1; }
+    100%{ transform:translateX(calc(50vw + 900px)); opacity:0.5; }
   }
-  .dragon-img{display:block; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.4));}
+  .dragon-img{position:absolute; left:0; top:0; display:block; filter:drop-shadow(0 8px 16px rgba(0,0,0,0.4));}
   .dragon-fire{position:absolute; left:585px; top:58px; opacity:0; transform-origin:left center; animation:fireBreath 2.6s ease-out forwards;}
   @keyframes fireBreath{
     0%,34%{ opacity:0; transform:scaleX(0.12); }
@@ -250,20 +246,29 @@
     64%{ opacity:1; transform:scaleX(1); }
     76%,100%{ opacity:0; transform:scaleX(0.3); }
   }
-  .dragon-rig-grosses{animation:dragonRigGrosses 3s cubic-bezier(.4,0,.2,1) forwards;}
-  .dragon-rig-grosses-dust{animation:dragonRigGrossesDust 3.7s cubic-bezier(.4,0,.2,1) forwards;}
+  .dragon-rig-grosses{width:1460px; height:413px; animation:dragonRigGrosses 3s cubic-bezier(.4,0,.2,1) forwards;}
+  .dragon-rig-grosses-dust{width:832px; height:413px; animation:dragonRigGrossesDust 3.7s cubic-bezier(.4,0,.2,1) forwards;}
+  .dragon-rig-grosses,.dragon-rig-grosses-dust{--ds:0.20;}
+  /* Groesse automatisch an die Bildschirmbreite anpassen, damit der Atem
+     rechts immer vollstaendig sichtbar bleibt. */
+  @media (min-width:420px){ .dragon-rig{--ds:0.34;} .dragon-rig-grosses,.dragon-rig-grosses-dust{--ds:0.26;} }
+  @media (min-width:560px){ .dragon-rig{--ds:0.46;} .dragon-rig-grosses,.dragon-rig-grosses-dust{--ds:0.36;} }
+  @media (min-width:760px){ .dragon-rig{--ds:0.64;} .dragon-rig-grosses,.dragon-rig-grosses-dust{--ds:0.50;} }
+  @media (min-width:980px){ .dragon-rig{--ds:0.84;} .dragon-rig-grosses,.dragon-rig-grosses-dust{--ds:0.65;} }
+  @media (min-width:1220px){ .dragon-rig{--ds:1;} .dragon-rig-grosses,.dragon-rig-grosses-dust{--ds:0.81;} }
+  @media (min-width:1560px){ .dragon-rig-grosses,.dragon-rig-grosses-dust{--ds:1;} }
   @keyframes dragonRigGrossesDust{
-    0%{ transform:translateX(-1625px); opacity:0; }
+    0%{ transform:translateX(calc(-50vw - 1100px)); opacity:0; }
     7%{ opacity:1; }
-    24%{ transform:translateX(calc(50vw - 416px)); opacity:1; }
-    100%{ transform:translateX(calc(50vw - 416px)); opacity:1; }
+    24%{ transform:translateX(0); opacity:1; }
+    100%{ transform:translateX(0); opacity:1; }
   }
   @keyframes dragonRigGrosses{
-    0%{ transform:translateX(-1592px); opacity:0; }
+    0%{ transform:translateX(calc(-50vw - 1100px)); opacity:0; }
     8%{ opacity:1; }
-    32%{ transform:translateX(calc(50vw - 416px)); opacity:1; }
-    72%{ transform:translateX(calc(50vw - 416px)); opacity:1; }
-    100%{ transform:translateX(calc(100vw + 455px)); opacity:0.5; }
+    32%{ transform:translateX(0); opacity:1; }
+    72%{ transform:translateX(0); opacity:1; }
+    100%{ transform:translateX(calc(50vw + 1100px)); opacity:0.5; }
   }
   .dragon-ice{position:absolute; opacity:0; transform-origin:left center; animation:iceBreath 3s ease-out forwards;}
   @keyframes iceBreath{
@@ -299,7 +304,7 @@
 
   /* ---------- constants ---------- */
   var TARGET_SCORE = 1000;
-  var APP_VERSION = "1.2.0";
+  var APP_VERSION = "1.3.0";
   var STORAGE_KEY = "tichuAppState_v1";
   var MODES = [4,5,6,7,8];
 
@@ -415,7 +420,19 @@
     }catch(e){ state = defaultState(); }
     if(!state.players) state.players = [];
     if(!state.sessions) state.sessions = [];
-    if(typeof state.demoActive!=="boolean") state.demoActive = false;
+    if(state.theme!=="dark" && state.theme!=="light") state.theme = "light";
+    applyTheme();
+  }
+
+  function applyTheme(){
+    document.documentElement.setAttribute("data-theme", state.theme==="dark" ? "dark" : "light");
+  }
+
+  function setTheme(mode){
+    state.theme = (mode==="dark") ? "dark" : "light";
+    save();
+    applyTheme();
+    render();
   }
 
   function save(){
@@ -447,6 +464,7 @@
       case "matchEnd": html = viewMatchEnd(); break;
       case "sessionSummary": html = viewSessionSummary(); break;
       case "stats": html = viewStats(); break;
+      case "compare": html = viewCompare(); break;
       case "settings": html = viewSettings(); break;
       case "playerProfile": html = viewPlayerProfile(); break;
       case "allSessions": html = viewAllSessions(); break;
@@ -458,7 +476,32 @@
     var oldModal = document.querySelector(".modal-backdrop");
     if(oldModal) oldModal.remove();
     if(modalState){ renderModal(); }
+    updateWakeLock();
   }
+
+  /* ---------- Bildschirm wachhalten (nur waehrend einer laufenden Partie) ---------- */
+  var wakeLockRef = null;
+  function wakeLockWanted(){
+    return nav.view === "match";
+  }
+  function updateWakeLock(){
+    if(!("wakeLock" in navigator)) return;
+    if(wakeLockWanted()){
+      if(wakeLockRef) return;
+      navigator.wakeLock.request("screen").then(function(lock){
+        wakeLockRef = lock;
+        lock.addEventListener("release", function(){ wakeLockRef = null; });
+      }).catch(function(){ wakeLockRef = null; });
+    } else if(wakeLockRef){
+      var lock = wakeLockRef;
+      wakeLockRef = null;
+      try { lock.release(); } catch(e) {}
+    }
+  }
+  document.addEventListener("visibilitychange", function(){
+    if(document.visibilityState === "visible"){ updateWakeLock(); }
+    else { wakeLockRef = null; }
+  });
 
   function go(view, extra){
     nav = Object.assign({view:view}, extra||{});
@@ -502,6 +545,25 @@
     }
     return a;
   }
+  function fmtDuration(ms){
+    if(!ms || ms <= 0) return null;
+    var mins = Math.round(ms/60000);
+    if(mins < 60) return mins + " Min.";
+    var h = Math.floor(mins/60), m = mins % 60;
+    return m === 0 ? (h + " Std.") : (h + " Std. " + m + " Min.");
+  }
+
+  function sessionDurationMs(session){
+    var all = [];
+    (session.matches||[]).forEach(function(m){
+      (m.rounds||[]).forEach(function(r){
+        if(typeof r.ts === "number" && r.ts > 0) all.push(r.ts);
+      });
+    });
+    if(all.length < 2) return 0;
+    return Math.max.apply(null, all) - Math.min.apply(null, all);
+  }
+
   function fmtDate(ts){
     var d = new Date(ts);
     return d.toLocaleDateString('de-CH',{day:'2-digit',month:'2-digit',year:'numeric'}) + " · " +
@@ -704,7 +766,8 @@
                 '<div class="row" style="flex-wrap:nowrap;">' +
                   '<input type="text" id="newPlayerInput" placeholder="Name eingeben" maxlength="24">' +
                   '<button class="btn btn-secondary" data-action="proceedToAvatarPick">Weiter</button>' +
-                '</div>';
+                '</div>' +
+                '<div id="nameErrorSlot"></div>';
     } else if(!draft.pendingAvatarId){
       html += '<label class="field-label">Avatar für '+escapeHtml(draft.pendingName)+' auswählen</label>';
       html += '<div class="avatar-grid">';
@@ -829,10 +892,27 @@
     return html;
   }
 
+  function nameTaken(name, exceptId){
+    var needle = (name||"").trim().toLowerCase();
+    return state.players.some(function(p){
+      return p.id !== exceptId && (p.name||"").trim().toLowerCase() === needle;
+    });
+  }
+
   function proceedToAvatarPick(){
     var input = document.getElementById("newPlayerInput");
     var name = (input.value||"").trim();
     if(!name) return;
+    if(nameTaken(name, null)){
+      draft.nameError = name;
+      var slot = document.getElementById("nameErrorSlot");
+      if(slot){
+        slot.innerHTML = '<div class="warn-banner" style="margin-top:10px; margin-bottom:0;">„'+escapeHtml(name)+'“ gibt es in der Bibliothek schon. Bitte einen anderen Namen wählen.</div>';
+      }
+      if(input) input.focus();
+      return;
+    }
+    draft.nameError = null;
     draft.pendingName = name;
     render();
   }
@@ -861,6 +941,7 @@
   }
 
   function cancelAddPlayer(){
+    draft.nameError = null;
     draft.pendingName = null;
     draft.pendingAvatarId = null;
     draft.matteliError = false;
@@ -910,7 +991,10 @@
       var html2 = topNavWithIcons("Bearbeiten");
       html2 += '<div class="card section">';
       html2 += '<label class="field-label">Name</label>';
-      html2 += '<input type="text" id="editPlayerNameInput" value="'+escapeHtml(draft.editName)+'" maxlength="24" style="margin-bottom:16px;">';
+      html2 += '<input type="text" id="editPlayerNameInput" value="'+escapeHtml(draft.editName)+'" maxlength="24" style="margin-bottom:'+(draft.editNameError?'10px':'16px')+';">';
+      if(draft.editNameError){
+        html2 += '<div class="warn-banner">„'+escapeHtml(draft.editNameError)+'“ gibt es schon. Bitte einen anderen Namen wählen.</div>';
+      }
       html2 += '<label class="field-label">Avatar</label>';
       html2 += '<div class="avatar-grid">';
       AVATARS.forEach(function(av){
@@ -945,6 +1029,10 @@
     html += '<tr><td>Punkteschnitt/Spiel</td><td style="text-align:right; font-weight:700;">'+(prof.avgScore!==null ? Math.round(prof.avgScore) : '—')+'</td></tr>';
     html += '</table></div>';
 
+    if(state.players.length > 1){
+      html += '<div class="section"><button class="btn btn-secondary btn-block" data-action="compareFromProfile" data-id="'+pid+'">⚔️ Vergleichen mit …</button></div>';
+    }
+
     return html;
   }
 
@@ -962,6 +1050,7 @@
 
   function cancelEditProfile(){
     draft.editingProfile = false;
+    draft.editNameError = null;
     draft.editName = undefined;
     draft.editAvatarId = undefined;
     render();
@@ -972,6 +1061,12 @@
     if(!p) return;
     var nameInput = document.getElementById("editPlayerNameInput");
     var name = nameInput ? (nameInput.value||"").trim() : "";
+    if(name && nameTaken(name, p.id)){
+      draft.editNameError = name;
+      render();
+      return;
+    }
+    draft.editNameError = null;
     if(name) p.name = name;
     if(draft.editAvatarId) p.avatarId = draft.editAvatarId;
     save();
@@ -2177,7 +2272,8 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
     html += '<div class="card section">' +
               '<h3>'+session.mode+' Spieler · '+fmtDate(session.createdAt)+'</h3>' +
               '<p class="faint" style="margin-top:6px;">'+escapeHtml(session.playerIds.map(playerName).join(", "))+'</p>' +
-              '<p class="faint" style="margin-top:6px;">Status: '+(session.status==="aborted"?"abgebrochen":"abgeschlossen")+'</p>' +
+              '<p class="faint" style="margin-top:6px;">Status: '+(session.status==="aborted"?"abgebrochen":"abgeschlossen")+
+                (function(){ var d=fmtDuration(sessionDurationMs(session)); return d ? ' · Dauer: '+d : ''; })()+'</p>' +
             '</div>';
 
     if(session.mode!==5 && session.mode!==6 && session.mode!==7){
@@ -2460,7 +2556,28 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
     };
   }
 
-  function computeStatistics(){
+  var STAT_RANGES = [
+    {id:"all",   label:"Alles",           ms:null},
+    {id:"year",  label:"Dieses Jahr",     ms:"year"},
+    {id:"m3",    label:"Letzte 3 Monate", ms:92*24*60*60*1000},
+    {id:"d30",   label:"Letzte 30 Tage",  ms:30*24*60*60*1000}
+  ];
+
+  function rangeCutoff(rangeId){
+    var r = STAT_RANGES.find(function(x){ return x.id===rangeId; });
+    if(!r || r.ms===null) return null;
+    if(r.ms==="year"){ return new Date(new Date().getFullYear(), 0, 1).getTime(); }
+    return Date.now() - r.ms;
+  }
+
+  function sessionsInRange(rangeId){
+    var cutoff = rangeCutoff(rangeId);
+    if(cutoff===null) return state.sessions;
+    return state.sessions.filter(function(s){ return (s.createdAt||0) >= cutoff; });
+  }
+
+  function computeStatistics(rangeId){
+    var sessionPool = sessionsInRange(rangeId || "all");
     var P = {}; // playerId -> agg
     function ensure(pid){ if(!P[pid]) P[pid] = newPlayerAgg(); return P[pid]; }
     var pairStats = {};    // "id1|id2" -> {ids, won, total}
@@ -2475,7 +2592,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
       if(won) p.contests[mode].w++;
     }
 
-    state.sessions.forEach(function(session){
+    sessionPool.forEach(function(session){
       var sessionTimeline = {}; // pid -> [{delta}] in chronological order, this session only
       session.playerIds.forEach(function(pid){ ensure(pid); sessionTimeline[pid] = []; });
 
@@ -2488,7 +2605,9 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
       }
 
       session.matches.forEach(function(match){
-        marathon.push({ mode:session.mode, sessionId:session.id, date:session.createdAt, rounds:match.rounds.length });
+        var rts = match.rounds.map(function(r){ return r.ts; }).filter(function(t){ return typeof t === "number" && t > 0; });
+        var durMs = rts.length >= 2 ? (Math.max.apply(null, rts) - Math.min.apply(null, rts)) : 0;
+        marathon.push({ mode:session.mode, sessionId:session.id, date:session.createdAt, rounds:match.rounds.length, durMs:durMs });
 
         var runA=0, runB=0, minA=0,maxA=0,minB=0,maxB=0;
 
@@ -2678,7 +2797,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
     cats.push({ title:"🏃 Marathon-Partie", subtitle:"Meiste Runden in einer einzelnen Partie", rows: cap(
       S.marathon.filter(function(m){ return m.rounds>0; })
         .sort(function(a,b){ return b.rounds-a.rounds; })
-        .map(function(m){ return [fmtDate(m.date).split(' · ')[0], m.rounds+" Runden"]; })
+        .map(function(m){ var d = fmtDuration(m.durMs); return [fmtDate(m.date).split(' · ')[0], m.rounds+" Runden"+(d?" · "+d:"")]; })
     )});
 
     cats.push({ title:"🦸 Last-Minute-Held", subtitle:"Doppelsieg geholt, als der Gegner bei ≥700 Punkten stand", rows: cap(
@@ -2765,6 +2884,14 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
   function viewSettings(){
     var html = topNavWithIcons("Einstellungen");
     html += '<div class="card section">' +
+              '<h3 style="margin-bottom:4px;">Darstellung</h3>' +
+              '<p class="faint" style="margin-bottom:12px;">Helles oder dunkles Design — abends am Spieltisch oft angenehmer.</p>' +
+              '<div class="seg" style="max-width:260px;">' +
+                '<button class="'+(state.theme!=="dark"?"active":"")+'" data-action="setTheme" data-val="light">☀️ Hell</button>' +
+                '<button class="'+(state.theme==="dark"?"active":"")+'" data-action="setTheme" data-val="dark">🌙 Dunkel</button>' +
+              '</div>' +
+            '</div>';
+    html += '<div class="card section">' +
               '<h3 style="margin-bottom:4px;">Daten sichern &amp; wiederherstellen</h3>' +
               '<p class="faint" style="margin-bottom:12px;">Exportiert alle Spieler, Spiele und Statistiken als Datei — zum Sichern oder Übertragen auf ein anderes Gerät.</p>' +
               '<div class="row">' +
@@ -2785,14 +2912,134 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
     return html;
   }
 
+  /* ---------- Direktvergleich zweier Personen ---------- */
+  function computeHeadToHead(idA, idB, rangeId){
+    var pool = sessionsInRange(rangeId || "all");
+    var res = {vsRounds:0, aWon:0, bWon:0, draws:0, aPts:0, bPts:0,
+               togetherRounds:0, togetherWon:0, sharedSessions:0};
+    pool.forEach(function(s){
+      if(s.playerIds.indexOf(idA)<0 || s.playerIds.indexOf(idB)<0) return;
+      res.sharedSessions++;
+      (s.matches||[]).forEach(function(m){
+        (m.rounds||[]).forEach(function(r){
+          if(!r.pairing) return;
+          var sideA = r.pairing.a.indexOf(idA)>=0 ? "a" : (r.pairing.b.indexOf(idA)>=0 ? "b" : null);
+          var sideB = r.pairing.a.indexOf(idB)>=0 ? "a" : (r.pairing.b.indexOf(idB)>=0 ? "b" : null);
+          if(!sideA || !sideB) return;
+          if(sideA !== sideB){
+            res.vsRounds++;
+            var da = sideA==="a" ? r.deltaA : r.deltaB;
+            var db = sideB==="a" ? r.deltaA : r.deltaB;
+            res.aPts += da; res.bPts += db;
+            if(da > db) res.aWon++; else if(db > da) res.bWon++; else res.draws++;
+          } else {
+            res.togetherRounds++;
+            var own = sideA==="a" ? r.deltaA : r.deltaB;
+            var opp = sideA==="a" ? r.deltaB : r.deltaA;
+            if(own > opp) res.togetherWon++;
+          }
+        });
+      });
+    });
+    return res;
+  }
+
+  function compareChipRow(which){
+    var sel = which==="a" ? draft.cmpA : draft.cmpB;
+    var other = which==="a" ? draft.cmpB : draft.cmpA;
+    return state.players.slice().sort(function(x,y){return x.name.localeCompare(y.name,"de");}).map(function(p){
+      var isSel = sel===p.id;
+      var blocked = other===p.id;
+      return '<button class="chip'+(isSel?' selected':'')+'" '+(blocked?'disabled style="opacity:0.35;"':'')+
+             ' data-action="setCompare'+(which==="a"?'A':'B')+'" data-id="'+p.id+'">'+
+             avatarForPlayer(p.id,22)+'<span>'+escapeHtml(p.name)+'</span></button>';
+    }).join("");
+  }
+
+  function viewCompare(){
+    if(!draft.statRange) draft.statRange = "all";
+    var html = topNavWithIcons("Direktvergleich");
+
+    if(state.players.length < 2){
+      html += '<div class="empty">Dafür braucht es mindestens zwei Personen in der Bibliothek.</div>';
+      return html;
+    }
+
+    html += '<div class="row section" style="align-items:center; gap:10px;">';
+    html += '<span class="faint">Zeitraum:</span>';
+    html += '<span class="seg">' + STAT_RANGES.map(function(r){
+      return '<button class="'+(draft.statRange===r.id?'active':'')+'" data-action="setStatRange" data-val="'+r.id+'">'+r.label+'</button>';
+    }).join('') + '</span></div>';
+
+    html += '<div class="card section"><label class="field-label">Erste Person</label><div class="row">'+compareChipRow("a")+'</div></div>';
+    html += '<div class="card section"><label class="field-label">Zweite Person</label><div class="row">'+compareChipRow("b")+'</div></div>';
+
+    if(!draft.cmpA || !draft.cmpB){
+      html += '<div class="empty">Wählt zwei Personen aus, um die Bilanz zu sehen.</div>';
+      return html;
+    }
+
+    var h = computeHeadToHead(draft.cmpA, draft.cmpB, draft.statRange);
+    var nA = playerName(draft.cmpA), nB = playerName(draft.cmpB);
+
+    html += '<div class="scorebar section">' +
+              '<div class="score-side a"><div class="score-names">'+nameWithAvatar(draft.cmpA,22)+'</div><div class="score-num">'+h.aWon+'</div></div>' +
+              '<div class="score-mid"><span class="faint">Runden</span></div>' +
+              '<div class="score-side b"><div class="score-names">'+nameWithAvatar(draft.cmpB,22)+'</div><div class="score-num">'+h.bWon+'</div></div>' +
+            '</div>';
+
+    if(h.vsRounds===0 && h.togetherRounds===0){
+      html += '<div class="empty">Diese beiden haben im gewählten Zeitraum noch nie zusammen am Tisch gesessen.</div>';
+      return html;
+    }
+
+    html += '<div class="card section"><h3 style="margin-bottom:10px;">Gegeneinander</h3><table class="stat">';
+    html += '<tr><td>Runden gegeneinander</td><td style="text-align:right; font-weight:700;">'+h.vsRounds+'</td></tr>';
+    if(h.vsRounds>0){
+      html += '<tr><td>'+escapeHtml(nA)+' gewonnen</td><td style="text-align:right; font-weight:700;">'+h.aWon+' · '+pct(h.aWon,h.vsRounds)+'%</td></tr>';
+      html += '<tr><td>'+escapeHtml(nB)+' gewonnen</td><td style="text-align:right; font-weight:700;">'+h.bWon+' · '+pct(h.bWon,h.vsRounds)+'%</td></tr>';
+      if(h.draws>0) html += '<tr><td>Unentschieden</td><td style="text-align:right; font-weight:700;">'+h.draws+'</td></tr>';
+      html += '<tr><td>Punkte aus diesen Runden</td><td style="text-align:right; font-weight:700;">'+h.aPts+' : '+h.bPts+'</td></tr>';
+    }
+    html += '</table></div>';
+
+    html += '<div class="card section"><h3 style="margin-bottom:10px;">Als Team zusammen</h3><table class="stat">';
+    html += '<tr><td>Gemeinsame Runden</td><td style="text-align:right; font-weight:700;">'+h.togetherRounds+'</td></tr>';
+    if(h.togetherRounds>0){
+      html += '<tr><td>Davon gewonnen</td><td style="text-align:right; font-weight:700;">'+h.togetherWon+' · '+pct(h.togetherWon,h.togetherRounds)+'%</td></tr>';
+    }
+    html += '<tr><td>Gemeinsame Spiele</td><td style="text-align:right; font-weight:700;">'+h.sharedSessions+'</td></tr>';
+    html += '</table></div>';
+
+    return html;
+  }
+
   function viewStats(){
     var html = topNavWithIcons("Statistiken");
     if(state.sessions.length===0){
-      html += '<div class="empty">Noch keine Spiele gespielt — sobald ihr loslegt (oder Testdaten aktiviert), erscheinen hier Auswertungen.</div>';
+      html += '<div class="empty">Noch keine Spiele gespielt — sobald ihr loslegt, erscheinen hier Auswertungen.</div>';
       return html;
     }
-    html += '<div class="section"><button class="btn btn-secondary btn-block" data-action="exportStatsPDF">📄 Als PDF exportieren</button></div>';
-    var S = computeStatistics();
+    if(!draft.statRange) draft.statRange = "all";
+
+    html += '<div class="row section" style="align-items:center; gap:10px;">';
+    html += '<span class="faint">Zeitraum:</span>';
+    html += '<span class="seg">' + STAT_RANGES.map(function(r){
+      return '<button class="'+(draft.statRange===r.id?'active':'')+'" data-action="setStatRange" data-val="'+r.id+'">'+r.label+'</button>';
+    }).join('') + '</span>';
+    html += '</div>';
+
+    var pool = sessionsInRange(draft.statRange);
+    if(pool.length===0){
+      html += '<div class="empty">In diesem Zeitraum wurde noch nicht gespielt.</div>';
+      return html;
+    }
+    html += '<p class="faint section" style="margin-top:-10px;">'+pool.length+' Spiel'+(pool.length===1?'':'e')+' im gewählten Zeitraum</p>';
+    html += '<div class="row section">' +
+              '<button class="btn btn-secondary" style="flex:1;" data-action="openCompare">⚔️ Direktvergleich</button>' +
+              '<button class="btn btn-secondary" style="flex:1;" data-action="exportStatsPDF">📄 Als PDF</button>' +
+            '</div>';
+    var S = computeStatistics(draft.statRange);
     var cats = buildStatCategories(S, 5);
     html += '<div class="stats-grid section">';
     cats.forEach(function(cat){ html += statLeaderboard(cat); });
@@ -2887,7 +3134,9 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
   }
 
   async function exportStatsPDF(){
-    var S = computeStatistics();
+    var rangeId = draft.statRange || "all";
+    var rangeLabel = (STAT_RANGES.find(function(r){ return r.id===rangeId; })||{}).label || "Alles";
+    var S = computeStatistics(rangeId);
     var cats = buildStatCategories(S, 5);
 
     var COLORS = {
@@ -2935,7 +3184,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
         ctx.fillText("Tichu-Sprechstunde — Statistiken", MARGIN, MARGIN+18*SCALE);
         ctx.fillStyle = COLORS.textFaint;
         ctx.font = (11*SCALE)+"px Arial, sans-serif";
-        ctx.fillText("Stand: "+new Date().toLocaleDateString("de-CH"), MARGIN, MARGIN+36*SCALE);
+        ctx.fillText("Stand: "+new Date().toLocaleDateString("de-CH")+"  ·  Zeitraum: "+rangeLabel, MARGIN, MARGIN+36*SCALE);
         top = MARGIN+54*SCALE;
       }
       colY = [top, top];
@@ -3162,6 +3411,12 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
     openMatchHistory: function(el){ openMatchHistory(el.getAttribute("data-id")); },
     backToSessionSummary: backToSessionSummary,
     backToMatchForEdit: backToMatchForEdit,
+    setTheme: function(el){ setTheme(el.getAttribute("data-val")); },
+    setStatRange: function(el){ draft.statRange = el.getAttribute("data-val"); render(); },
+    openCompare: function(){ go("compare"); },
+    setCompareA: function(el){ draft.cmpA = el.getAttribute("data-id"); render(); },
+    setCompareB: function(el){ draft.cmpB = el.getAttribute("data-id"); render(); },
+    compareFromProfile: function(el){ draft.cmpA = el.getAttribute("data-id"); draft.cmpB = null; go("compare"); },
     exportData: exportData,
     resetAllData: resetAllData,
     triggerImport: triggerImport
@@ -3184,6 +3439,11 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
   });
 
   document.addEventListener("input", function(e){
+    if(e.target.id==="newPlayerInput" && draft.nameError){
+      draft.nameError = null;
+      var slotEl = document.getElementById("nameErrorSlot");
+      if(slotEl) slotEl.innerHTML = "";
+    }
     if(e.target.id==="ptsA"){
       var vA = sanitizeSignedInt(e.target.value);
       draft.roundForm.ptsA = vA;
@@ -3204,6 +3464,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
     }
     if(e.target.id==="editPlayerNameInput"){
       draft.editName = e.target.value;
+      draft.editNameError = null;
       renderKeepFocus("editPlayerNameInput");
     }
   });
