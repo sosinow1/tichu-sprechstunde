@@ -101,6 +101,11 @@
   .avatar-pick-btn:disabled{cursor:not-allowed;}
   .avatar-pick-btn:not(:disabled):active{border-color:var(--gold);}
   .score-side-names{display:flex; flex-direction:column; gap:4px;}
+  .summary-card{display:flex; gap:18px; align-items:flex-start; justify-content:space-between;}
+  .summary-main{flex:1; min-width:0;}
+  .summary-dragon{position:relative; width:290px; height:92px; flex:none; align-self:center; opacity:0.95;}
+  .summary-dragon img{position:absolute; display:block; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.25));}
+  @media (max-width:840px){ .summary-dragon{display:none;} }
   .stats-grid{display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));}
   .stats-grid h3{font-size:20.5px; line-height:1.25;}
   .stats-grid .faint{font-size:15px; line-height:1.35;}
@@ -304,7 +309,7 @@
 
   /* ---------- constants ---------- */
   var TARGET_SCORE = 1000;
-  var APP_VERSION = "1.3.0";
+  var APP_VERSION = "1.3.1";
   var STORAGE_KEY = "tichuAppState_v1";
   var MODES = [4,5,6,7,8];
 
@@ -551,6 +556,28 @@
     if(mins < 60) return mins + " Min.";
     var h = Math.floor(mins/60), m = mins % 60;
     return m === 0 ? (h + " Std.") : (h + " Std. " + m + " Min.");
+  }
+
+  function sessionCallStats(session){
+    var s = {tichuCalled:0, tichuSuccess:0, grossesCalled:0, grossesSuccess:0, doubleWins:0};
+    (session.matches||[]).forEach(function(m){
+      (m.rounds||[]).forEach(function(r){
+        if(r.doubleWin) s.doubleWins++;
+        var calls = r.calls || {};
+        Object.keys(calls).forEach(function(pid){
+          var call = calls[pid];
+          if(!call) return;
+          if(call.type==="tichu"){
+            s.tichuCalled++;
+            if(call.success===true) s.tichuSuccess++;
+          } else if(call.type==="grosses"){
+            s.grossesCalled++;
+            if(call.success===true) s.grossesSuccess++;
+          }
+        });
+      });
+    });
+    return s;
   }
 
   function sessionDurationMs(session){
@@ -2269,11 +2296,26 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
   function viewSessionSummary(){
     var session = findSession(nav.sessionId);
     var html = topNav("Spiel-Übersicht");
-    html += '<div class="card section">' +
-              '<h3>'+session.mode+' Spieler · '+fmtDate(session.createdAt)+'</h3>' +
-              '<p class="faint" style="margin-top:6px;">'+escapeHtml(session.playerIds.map(playerName).join(", "))+'</p>' +
-              '<p class="faint" style="margin-top:6px;">Status: '+(session.status==="aborted"?"abgebrochen":"abgeschlossen")+
-                (function(){ var d=fmtDuration(sessionDurationMs(session)); return d ? ' · Dauer: '+d : ''; })()+'</p>' +
+    var cs = sessionCallStats(session);
+    var dur = fmtDuration(sessionDurationMs(session));
+    html += '<div class="card section summary-card">' +
+              '<div class="summary-main">' +
+                '<h3>'+session.mode+' Spieler · '+fmtDate(session.createdAt)+'</h3>' +
+                '<p class="faint" style="margin-top:6px;">'+escapeHtml(session.playerIds.map(playerName).join(", "))+'</p>' +
+                '<p class="faint" style="margin-top:6px;">Status: '+(session.status==="aborted"?"abgebrochen":"abgeschlossen")+
+                  (dur ? ' · Spielzeit: '+dur : '')+'</p>' +
+                '<table class="stat" style="margin-top:14px;">' +
+                  '<tr><td>Angesagte Tichus</td><td style="text-align:right; font-weight:700;">'+cs.tichuCalled+'</td></tr>' +
+                  '<tr><td>Davon erfolgreich</td><td style="text-align:right; font-weight:700;">'+cs.tichuSuccess+'</td></tr>' +
+                  '<tr><td>Angesagte Grosse Tichus</td><td style="text-align:right; font-weight:700;">'+cs.grossesCalled+'</td></tr>' +
+                  '<tr><td>Davon erfolgreich</td><td style="text-align:right; font-weight:700;">'+cs.grossesSuccess+'</td></tr>' +
+                  '<tr><td>Doppelsiege</td><td style="text-align:right; font-weight:700;">'+cs.doubleWins+'</td></tr>' +
+                '</table>' +
+              '</div>' +
+              '<div class="summary-dragon" aria-hidden="true">' +
+                '<img src="data:image/png;base64,'+DRAGON_IMG_B64+'" style="left:0; top:6px; width:160px; height:79px;" alt="">' +
+                '<img src="data:image/png;base64,'+FIRE_IMG_B64+'" style="left:150px; top:21px; width:140px; height:43px;" alt="">' +
+              '</div>' +
             '</div>';
 
     if(session.mode!==5 && session.mode!==6 && session.mode!==7){
@@ -2794,10 +2836,10 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
         })
     )});
 
-    cats.push({ title:"🏃 Marathon-Partie", subtitle:"Meiste Runden in einer einzelnen Partie", rows: cap(
-      S.marathon.filter(function(m){ return m.rounds>0; })
-        .sort(function(a,b){ return b.rounds-a.rounds; })
-        .map(function(m){ var d = fmtDuration(m.durMs); return [fmtDate(m.date).split(' · ')[0], m.rounds+" Runden"+(d?" · "+d:"")]; })
+    cats.push({ title:"🏃 Marathon-Partie", subtitle:"Längste Spielzeit in einer einzelnen Partie", rows: cap(
+      S.marathon.filter(function(m){ return m.durMs>0; })
+        .sort(function(a,b){ return b.durMs-a.durMs; })
+        .map(function(m){ return [fmtDate(m.date).split(' · ')[0], fmtDuration(m.durMs)]; })
     )});
 
     cats.push({ title:"🦸 Last-Minute-Held", subtitle:"Doppelsieg geholt, als der Gegner bei ≥700 Punkten stand", rows: cap(
