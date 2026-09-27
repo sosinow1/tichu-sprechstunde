@@ -103,9 +103,12 @@
   .score-side-names{display:flex; flex-direction:column; gap:4px;}
   .summary-card{display:flex; gap:18px; align-items:flex-start; justify-content:space-between;}
   .summary-main{flex:1; min-width:0;}
-  .summary-dragon{position:relative; width:290px; height:92px; flex:none; align-self:center; opacity:0.95;}
-  .summary-dragon img{position:absolute; display:block; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.25));}
+  .dragon-deco{position:relative; flex:none;}
+  .dragon-deco img{position:absolute; display:block; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.25));}
+  .summary-dragon{flex:none; align-self:center; opacity:0.95;}
   @media (max-width:840px){ .summary-dragon{display:none;} }
+  .header-dragon{flex:none; display:flex; align-items:center; justify-content:center; opacity:0.95;}
+  @media (max-width:1100px){ .header-dragon{display:none;} }
   .stats-grid{display:grid; gap:14px; grid-template-columns:repeat(auto-fit, minmax(250px, 1fr));}
   .stats-grid h3{font-size:20.5px; line-height:1.25;}
   .stats-grid .faint{font-size:15px; line-height:1.35;}
@@ -309,7 +312,7 @@
 
   /* ---------- constants ---------- */
   var TARGET_SCORE = 1000;
-  var APP_VERSION = "1.3.1";
+  var APP_VERSION = "1.3.2";
   var STORAGE_KEY = "tichuAppState_v1";
   var MODES = [4,5,6,7,8];
 
@@ -558,6 +561,20 @@
     return m === 0 ? (h + " Std.") : (h + " Std. " + m + " Min.");
   }
 
+  /* Drache + Feueratem als Deko. Massstab wird aus der Animation abgeleitet,
+     damit der Atem in jeder Groesse exakt am Maul ansetzt. */
+  function dragonComposition(dragonW, extraStyle){
+    var s  = dragonW / 624;
+    var dh = Math.round(308 * s);
+    var fl = Math.round(585 * s), ft = Math.round(58 * s);
+    var fw = Math.round(546 * s), fh = Math.round(169 * s);
+    var totalW = fl + fw, totalH = Math.max(dh, ft + fh);
+    return '<div class="dragon-deco" style="width:'+totalW+'px; height:'+totalH+'px;'+(extraStyle||'')+'" aria-hidden="true">' +
+             '<img src="data:image/png;base64,'+DRAGON_IMG_B64+'" style="left:0; top:0; width:'+dragonW+'px; height:'+dh+'px;" alt="">' +
+             '<img src="data:image/png;base64,'+FIRE_IMG_B64+'" style="left:'+fl+'px; top:'+ft+'px; width:'+fw+'px; height:'+fh+'px;" alt="">' +
+           '</div>';
+  }
+
   function sessionCallStats(session){
     var s = {tichuCalled:0, tichuSuccess:0, grossesCalled:0, grossesSuccess:0, doubleWins:0};
     (session.matches||[]).forEach(function(m){
@@ -609,6 +626,7 @@
     var html = '';
     html += '<div class="topbar">' +
               '<div class="brand"><div class="brand-mark">龍</div><div><h1>Tichu-Sprechstunde</h1><p class="faint">Für alle mit klarer Haltung und schlechten Karten.</p></div></div>' +
+              '<div class="header-dragon">'+dragonComposition(120)+'</div>' +
               '<span class="row" style="gap:8px;">' +
                 '<button class="iconbtn" data-action="openStats" title="Statistiken">📊</button>' +
                 '<button class="iconbtn" data-action="openAllSessions" title="Alle Spiele">📜</button>' +
@@ -2312,10 +2330,7 @@ var ICEDRAGON_IMG_B64 = "iVBORw0KGgoAAAANSUhEUgAAAoAAAAE+CAYAAAAd5aG7AAEAAElEQVR
                   '<tr><td>Doppelsiege</td><td style="text-align:right; font-weight:700;">'+cs.doubleWins+'</td></tr>' +
                 '</table>' +
               '</div>' +
-              '<div class="summary-dragon" aria-hidden="true">' +
-                '<img src="data:image/png;base64,'+DRAGON_IMG_B64+'" style="left:0; top:6px; width:160px; height:79px;" alt="">' +
-                '<img src="data:image/png;base64,'+FIRE_IMG_B64+'" style="left:150px; top:21px; width:140px; height:43px;" alt="">' +
-              '</div>' +
+              '<div class="summary-dragon">'+dragonComposition(160)+'</div>' +
             '</div>';
 
     if(session.mode!==5 && session.mode!==6 && session.mode!==7){
